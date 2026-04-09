@@ -51,6 +51,7 @@ azure_llm = LLM(
 # ====================================================================
 def count_expected_actions(raw_code_content: str) -> int:
     """Accurately counts every actionable Playwright line in a snippet."""
+    # 🔴 FIX: Restored the regex to count raw Playwright actions
     action_regex = re.compile(r"\.(click|fill|check|uncheck|press|hover|goto|dblclick)\(")
     expected_action_count = 0
     for line in raw_code_content.split('\n'):
@@ -143,7 +144,6 @@ def capture_annotated_screenshot(page: Page, locator, full_action_description: s
         page.evaluate("() => { document.getElementById('ge-spotlight-box')?.remove(); document.getElementById('ge-spotlight-label')?.remove(); }")
     except Exception as e: print(f"   └── ⚠️ Screenshot Error: {e}")
 
-# 🔴 FIX: Added **action_kwargs to the signature
 def safe_action(page: Page, locator, action_name: str, description: str, *action_args, **action_kwargs):
     '''Performs action with spotlight screenshots and manual fallbacks.'''
     full_desc = f"{action_name.capitalize()}: {description}"
@@ -169,10 +169,8 @@ def safe_action(page: Page, locator, action_name: str, description: str, *action
         if locator != page:
             capture_annotated_screenshot(page, locator, full_desc)
             action_func = getattr(locator, action_name)
-            # 🔴 FIX: Pass **action_kwargs to Playwright
             action_func(*action_args, **action_kwargs)
         else:
-            # 🔴 FIX: Pass **action_kwargs to page.goto as well
             if action_name == 'goto': page.goto(*action_args, **action_kwargs)
                 
         print(f"✅ SUCCESS: {description}")
@@ -231,7 +229,8 @@ def process_annotated_script_to_docs(annotated_code: str, feature_name: str, tab
                     f"CRITICAL RULES FOR NO DATA LOSS:\n"
                     f"1. You MUST generate EXACTLY {expected_count} rows containing locators. Every single Playwright action MUST get its own row.\n"
                     "2. DO NOT include the markdown table header. Output ONLY the table body rows.\n"
-                    f"3. Start the section with a header row exactly like this: `| | **--- {sec['name'].upper()} ---** | | | | |\`\n"
+                    # 🔴 FIX: Removed the backslashes from the backticks so there is no Syntax Warning!
+                    f"3. Start the section with a header row exactly like this: `| | **--- {sec['name'].upper()} ---** | | | | |`\n"
                     f"4. Use the prefix '{section_prefix}' for the Use Case IDs (e.g., {section_prefix}.1, {section_prefix}.2).\n\n"
                     "GUIDEBOOK FORMATTING RULES:\n"
                     "1. The 'Test Case Description' column MUST be highly readable for manual testers. Write it like an instruction manual or guidebook.\n"
@@ -356,16 +355,14 @@ def run_step_3_generate_excel_uat(docs_dir: str, excel_dir: str):
         
         rows = []
         current_feature = ""
-        raw_table_row_count = 0 # Used for the 0 Data Loss Check
+        raw_table_row_count = 0 
         
         for line in lines:
             line = line.strip()
             
-            # Ignore markdown code block wrappers
             if line.startswith("```"):
                 continue
                 
-            # Capture the Main Feature Title
             if line.startswith("# Feature:"):
                 current_feature = line.replace("# Feature:", "").strip()
                 rows.append({
@@ -375,13 +372,11 @@ def run_step_3_generate_excel_uat(docs_dir: str, excel_dir: str):
                 })
                 continue
                 
-            # Skip Markdown table headers and alignment rows
             if line.startswith("|") and "Use Case ID" in line:
                 continue 
             if line.startswith("|") and ":---" in line:
                 continue 
                 
-            # Parse Data Rows
             if line.startswith("|"):
                 raw_table_row_count += 1
                 parts = [p.strip() for p in line.split("|")[1:-1]]
@@ -390,7 +385,6 @@ def run_step_3_generate_excel_uat(docs_dir: str, excel_dir: str):
                     use_case = parts[0]
                     desc = parts[1].replace("<br>", "\n").replace("<br/>", "\n")
                     
-                    # Clean up bolding asterisks from section headers
                     if desc.startswith("**---") and desc.endswith("---**"):
                         desc = desc.replace("**", "")
                         
@@ -408,15 +402,12 @@ def run_step_3_generate_excel_uat(docs_dir: str, excel_dir: str):
             excel_path = os.path.join(excel_dir, excel_filename)
             df = pd.DataFrame(rows)
             
-            # --- 0 DATA LOSS VERIFICATION ---
-            # Subtract 1 for the main feature header we manually injected
             parsed_rows = len(rows) - (1 if current_feature else 0)
             if parsed_rows != raw_table_row_count:
                 print(f"       ❌ WARNING: Possible data loss! Raw Markdown rows: {raw_table_row_count}, Excel Rows: {parsed_rows}")
             else:
                 print(f"       ✅ Verified: 0 Data Loss. Parsed exactly {raw_table_row_count} rows.")
 
-            # --- EXCEL STYLING ---
             with pd.ExcelWriter(excel_path, engine='openpyxl') as writer:
                 df.to_excel(writer, index=False, sheet_name='UAT Summary')
                 worksheet = writer.sheets['UAT Summary']
@@ -429,13 +420,11 @@ def run_step_3_generate_excel_uat(docs_dir: str, excel_dir: str):
                 wrap_alignment = Alignment(wrap_text=True, vertical="top")
                 center_alignment = Alignment(horizontal="center", vertical="center")
 
-                # Style Headers
                 for cell in worksheet[1]:
                     cell.font = header_font
                     cell.fill = header_fill
                     cell.alignment = center_alignment
                 
-                # Adjust Column Widths
                 worksheet.column_dimensions['A'].width = 15
                 worksheet.column_dimensions['B'].width = 65
                 worksheet.column_dimensions['C'].width = 50
@@ -443,13 +432,11 @@ def run_step_3_generate_excel_uat(docs_dir: str, excel_dir: str):
                 worksheet.column_dimensions['E'].width = 25
                 worksheet.column_dimensions['F'].width = 25
 
-                # Style Rows and Merge Headers
                 for row_idx, row in enumerate(worksheet.iter_rows(min_row=2), 2):
                     use_case_cell, description_cell, locator_cell = row[0], row[1], row[2]
                     desc_val = str(description_cell.value)
                     
                     if desc_val.startswith("--- ") and desc_val.endswith(" ---"):
-                        # This is a Section Header - Merge it across the table
                         worksheet.merge_cells(f'A{row_idx}:F{row_idx}')
                         merged_cell = worksheet.cell(row=row_idx, column=1)
                         merged_cell.value = desc_val
@@ -457,7 +444,6 @@ def run_step_3_generate_excel_uat(docs_dir: str, excel_dir: str):
                         merged_cell.fill = part_fill
                         merged_cell.alignment = center_alignment
                     else:
-                        # Standard Row
                         use_case_cell.alignment = center_alignment
                         description_cell.alignment = wrap_alignment
                         locator_cell.alignment = wrap_alignment
@@ -469,6 +455,7 @@ def run_step_3_generate_excel_uat(docs_dir: str, excel_dir: str):
             processed_count += 1
             
     print(f"\n--- Excel Conversion Complete! Created {processed_count} files. ---")
+
 
 # --- Execution Entry Point ---
 if __name__ == "__main__":
@@ -484,7 +471,7 @@ if __name__ == "__main__":
     
     os.makedirs(output_docs_dir, exist_ok=True)
     os.makedirs(output_pytest_dir, exist_ok=True)
-    os.makedirs(output_excel_dir, exist_ok=True) # Ensure it exists
+    os.makedirs(output_excel_dir, exist_ok=True) 
     
     if args.files:
         available_files = os.listdir(annotated_logs_dir)

@@ -4,6 +4,7 @@ import json
 import base64
 import glob
 import argparse
+import time
 from typing import TypedDict, List, Dict, Any
 from dotenv import load_dotenv
 
@@ -31,25 +32,31 @@ def encode_image(image_path: str) -> str:
         return base64.b64encode(image_file.read()).decode("utf-8")
 
 # --- Node 1: File Loader ---
-# --- Node 1: File Loader ---
 def load_files(state: AgentState) -> dict:
-    script_path = os.path.join("Enhanced_Logs", state["script_name"])
+    # 🔴 STRICTLY READ FROM Codegen_Logs
+    script_path = os.path.join("Codegen_Logs", state["script_name"])
     
     with open(script_path, "r", encoding="utf-8") as f:
         raw_code = f.read()
 
-    # Add line numbers to the code so the LLM can reference exactly where to put comments
+    # 🔴 SAFETY CHECK: Ensure we aren't reading an Enhanced Log by mistake
+    if "def safe_action" in raw_code or "capture_annotated_screenshot" in raw_code:
+        print("\n" + "!"*80)
+        print(f"🚨 CRITICAL WARNING 🚨")
+        print(f"The file {script_path} contains 'safe_action' or boilerplate code!")
+        print(f"You must use the RAW Playwright recording. Please fix the file in Codegen_Logs.")
+        print("!"*80 + "\n")
+
+    # Add line numbers to the code
     numbered_code = "\n".join([f"{i+1}: {line}" for i, line in enumerate(raw_code.split('\n'))])
     
-    # Dynamically map to the specific screenshot subdirectory safely using os.path.join
+    # Safely map to the specific screenshot subdirectory using os.path.join
     script_base_name = state["script_name"].replace(".py", "").replace("_enhanced", "")
     target_screenshot_dir = os.path.join("Test_Screenshots", script_base_name)
     
-    print(f"\n[DEBUG] Searching for screenshots in: {os.path.abspath(target_screenshot_dir)}")
-    
-    # 🔴 FIX: Use os.listdir instead of glob to guarantee we find the files on Windows
+    # Use os.listdir to avoid glob bugs on Windows
     if not os.path.exists(target_screenshot_dir):
-        print(f"[DEBUG] ❌ Directory does not exist! Check your folder names.")
+        print(f"⚠️ Warning: No screenshot directory found at {target_screenshot_dir}")
         screenshot_paths = []
     else:
         screenshot_paths = [
@@ -57,22 +64,18 @@ def load_files(state: AgentState) -> dict:
             for f in os.listdir(target_screenshot_dir) 
             if f.endswith('.png')
         ]
-        # Sort them chronologically based on your timestamped filenames
         screenshot_paths.sort()
     
-    print(f"Loaded script: {state['script_name']} | Total Images found: {len(screenshot_paths)}")
+    print(f"\nLoaded script: {state['script_name']} | Total Images found: {len(screenshot_paths)}")
     
     return {
         "raw_code": raw_code,
         "numbered_code": numbered_code,
         "screenshot_paths": screenshot_paths,
-        "comments": [] # Initialize empty list
+        "comments": [] 
     }
-    
 
-# --- Node 2: The Planner (Text-Only Semantic Chunker) ---
-# --- Node 2: The Planner (Text-Only Semantic Chunker) ---
-# --- Node 2: The Planner (Overlap Sliding Window Chunker) ---
+# --- Node 2: The Planner (Overlap Sliding Window) ---
 def plan_semantic_sections(state: AgentState) -> dict:
     print("🧠 Planning semantic sections using Overlap Sliding Window...")
     
@@ -93,9 +96,8 @@ def plan_semantic_sections(state: AgentState) -> dict:
     
     all_sections = []
     last_processed_line = 0
-
-    # Slide through the file with an overlap
     start_idx = 0
+    
     while start_idx < total_lines:
         end_idx = min(start_idx + WINDOW_SIZE, total_lines)
         
@@ -113,7 +115,7 @@ def plan_semantic_sections(state: AgentState) -> dict:
             "3. EXHAUSTIVE MAPPING: Every line from your starting point must belong to a section. Do not leave gaps.\n"
             "4. THE OVERLAP RULE: If a logical user flow starts near the end of this snippet but seems incomplete, DO NOT include it in your final section. Stop your planning at the end of the last complete flow. Another agent will handle the rest of the file.\n"
             "5. Provide the `start_line` and `end_line` using the EXACT line numbers shown in the text.\n"
-            "6. ALIGNING IMAGES: Select ALL `image_filenames` from the provided list that correspond to the actions in the section.\n"
+            "6. ALIGNING IMAGES: Select ALL `image_filenames` from the provided list that correspond to the actions in the section. Return them as a list of strings.\n"
             "7. Return ONLY a JSON object."
         )
         
@@ -139,37 +141,26 @@ def plan_semantic_sections(state: AgentState) -> dict:
             chunk_sections = json.loads(response.content).get("sections", [])
             
             if chunk_sections:
-                # Add the parsed sections to our master list
                 all_sections.extend(chunk_sections)
-                
-                # Update our tracking variable so the next window knows where to pick up
                 last_processed_line = chunk_sections[-1]["end_line"]
                 print(f"       ✅ Found {len(chunk_sections)} sections. Processed up to line {last_processed_line}.")
-                
-                # Move the window forward, starting exactly where the LLM left off (minus a tiny safety buffer)
                 start_idx = last_processed_line
             else:
                 print("       ⚠️ LLM returned no sections for this window. Forcing window forward.")
                 start_idx += WINDOW_SIZE - OVERLAP
-
-            import time
+                
             time.sleep(2) # Prevent rate limits
             
         except Exception as e:
             print(f"       ❌ Failed to parse Planner JSON for window {start_idx + 1}-{end_idx}: {e}")
-            # If it fails, force the window forward so we don't get stuck in an infinite loop
             start_idx += WINDOW_SIZE - OVERLAP
 
-        # Break the loop if we have successfully mapped the entire file
-        if last_processed_line >= total_lines - 5: # Allow a 5-line margin for trailing whitespace/teardown
+        if last_processed_line >= total_lines - 5: 
             break
 
     print(f"✅ Total script divided into {len(all_sections)} continuous semantic sections.")
     return {"sections": all_sections}
 
-
-
-# --- Node 3: The Worker (Multimodal Annotator) ---
 # --- Node 3: The Worker (Multimodal Annotator) ---
 def annotate_sections(state: AgentState) -> dict:
     llm = AzureChatOpenAI(
@@ -177,26 +168,26 @@ def annotate_sections(state: AgentState) -> dict:
         azure_endpoint=os.environ.get("AZURE_ENDPOINT"),
         api_version=os.environ.get("AZURE_API_VERSION"),
         azure_deployment=os.environ.get("AZURE_DEPLOYMENT_NAME"),
-        temperature=0.0, # LOWERED TO 0.0 TO KILL CREATIVITY/HALLUCINATION
+        temperature=0.0, 
     ).bind(response_format={"type": "json_object"})
-
+    
     all_comments = []
     raw_lines = state["numbered_code"].split('\n')
     prev_context = "None. This is the first section."
-
+    
     for i, section in enumerate(state["sections"]):
         print(f"   └── 📝 Annotating Section {i+1}/{len(state['sections'])}: {section['name']}...")
         
         start_idx = max(0, section["start_line"] - 1)
         end_idx = min(len(raw_lines), section["end_line"])
         snippet = "\n".join(raw_lines[start_idx:end_idx])
-
+        
         system_prompt = (
             f"You are an Expert QA Automation Engineer. You are annotating a specific section of a script titled: '{section['name']}'.\n"
             "Analyze the numbered code snippet. I am providing the chronological sequence of screenshots for this specific flow.\n\n"
             "ANTI-HALLUCINATION RULES (CRITICAL):\n"
-            "1. DO NOT GUESS. If a locator is abstract (e.g., `div:nth-child(8)`) and the screenshot does not clearly explain what it is, describe the action literally (e.g., 'Click the 8th div element').\n"
-            "2. DO NOT invent business rules, feature names, or product names that are not explicitly visible in the code or the screenshots.\n"
+            "1. DO NOT GUESS. If a locator is abstract and the screenshot does not clearly explain what it is, describe the action literally.\n"
+            "2. DO NOT invent business rules or feature names that are not explicitly visible in the code or screenshots.\n"
             "3. Group related actions. If 3 lines fill out a single form, place ONE detailed comment above the first line.\n"
             "4. The line number you provide MUST match a line inside the provided snippet exactly.\n\n"
             "EXPECTED JSON FORMAT:\n"
@@ -206,14 +197,13 @@ def annotate_sections(state: AgentState) -> dict:
             "  ]\n"
             "}"
         )
-
+        
         message_content = [
             {"type": "text", "text": f"Context from Previous Section:\n{prev_context}\n\nCode Snippet for {section['name']}:\n\n{snippet}"}
         ]
-
+        
         # Attach ALL images assigned to this section
         for img_name in section.get("image_filenames", []):
-            # Find the actual path
             img_path = next((p for p in state["screenshot_paths"] if os.path.basename(p) == img_name), None)
             if img_path:
                 base64_img = encode_image(img_path)
@@ -222,17 +212,16 @@ def annotate_sections(state: AgentState) -> dict:
                     "type": "image_url",
                     "image_url": {"url": f"data:image/png;base64,{base64_img}", "detail": "low"}
                 })
-
+                
         response = llm.invoke([SystemMessage(content=system_prompt), HumanMessage(content=message_content)])
         
         try:
             chunk_comments = json.loads(response.content).get("comments", [])
             all_comments.extend(chunk_comments)
-            # Update context for the next loop
             prev_context = json.dumps(chunk_comments)
         except Exception as e:
             print(f"❌ Failed to parse Worker JSON for section {section['name']}: {e}")
-
+            
     return {"comments": all_comments}
 
 # --- Node 4: File Saver (Code Injection) ---
@@ -247,7 +236,6 @@ def save_annotated_code(state: AgentState) -> dict:
     for i, line in enumerate(raw_lines):
         line_num = i + 1
         if line_num in comments_dict:
-            # Maintain the original indentation level of the code
             indent = len(line) - len(line.lstrip())
             annotated_lines.append(f"{' ' * indent}# {comments_dict[line_num]}")
         annotated_lines.append(line)
@@ -262,34 +250,30 @@ def save_annotated_code(state: AgentState) -> dict:
 
 # --- Build the LangGraph Workflow ---
 workflow = StateGraph(AgentState)
-
 workflow.add_node("load_files", load_files)
 workflow.add_node("plan_semantic_sections", plan_semantic_sections)
 workflow.add_node("annotate_sections", annotate_sections)
 workflow.add_node("save_annotated_code", save_annotated_code)
-
 workflow.set_entry_point("load_files")
 workflow.add_edge("load_files", "plan_semantic_sections")
 workflow.add_edge("plan_semantic_sections", "annotate_sections")
 workflow.add_edge("annotate_sections", "save_annotated_code")
 workflow.add_edge("save_annotated_code", END)
-
 annotator_app = workflow.compile()
 
 # --- Execution Entry Point ---
 if __name__ == "__main__":
-    # --- Parse Command Line Arguments ---
     parser = argparse.ArgumentParser(description="Semantically chunk and annotate Playwright logs.")
-    parser.add_argument('--files', nargs='*', help="Specific script names to process (e.g., promo_main.py). If omitted, processes all files in Codegen_Logs.")
+    parser.add_argument('--files', nargs='*', help="Specific script names to process. If omitted, processes all files in Codegen_Logs.")
     args = parser.parse_args()
-
+    
+    # 🔴 STRICTLY SET TO Codegen_Logs
     codegen_dir = "Codegen_Logs"
     screenshot_dir = "Test_Screenshots"
     
     os.makedirs(codegen_dir, exist_ok=True)
     os.makedirs(screenshot_dir, exist_ok=True)
     
-    # --- Determine which files to process ---
     if args.files:
         available_files = os.listdir(codegen_dir)
         scripts_to_process = [f for f in args.files if f in available_files]
@@ -302,9 +286,8 @@ if __name__ == "__main__":
     if not scripts_to_process:
         print(f"No Python scripts found in {codegen_dir} to process.")
         sys.exit(0)
-
+        
     print(f"{'='*60}\n🚀 Starting Playwright Log Annotator Pipeline\n{'='*60}")
-
     for script in scripts_to_process:
         initial_state = {"script_name": script}
         result = annotator_app.invoke(initial_state)
