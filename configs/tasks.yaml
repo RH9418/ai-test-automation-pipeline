@@ -1,0 +1,190 @@
+tasks:
+  overview_task:
+    description: >
+      Your mission is to create a highly specific and exhaustive overview document of a webpage
+      based on the pre-cleaned HTML content provided below.
+      **CRITICAL INSTRUCTIONS FOR SPECIFICITY:**
+      1. **NO SUMMARIZING:** Absolutely NEVER use terms like "e.g.", "etc.", "such as", "like", or "including".
+      2. **LIST EVERYTHING EXHAUSTIVELY:**
+        - If you find a group of navigation tabs, you MUST list the exact text of EVERY single tab.
+        - If you find a filter panel, you MUST list EVERY single filter category and option visible.
+        - If you find a menu or sidebar, you MUST list EVERY single link or button it contains.
+      3. **USE EXACT TEXT:** Extract the exact labels found in the HTML for buttons, tabs, headers, and links. Do not paraphrase them.
+      4. **IGNORE THE HEAD:** Do not document the <head>, <meta>, or <style> tags. Focus ONLY on the visible UI elements in the <body>.
+      5. **MOST IMPORTANT:** Focus PRIMARILY
+      Analyze the <body> of the HTML. Identify the main logical sections (Header, Navigation Panel, Toolbars, Filters, Main Workspace).
+      Write a well-structured markdown document detailing these sections with exhaustive bullet points.
+      Consider feedback from any previous runs to improve your analysis.
+      **Feedback from Last Run:**
+      {prior_feedback}
+      Cleaned HTML Content to Analyze:
+      ---
+      {cleaned_page_html}
+      ---
+    expected_output: >
+      A highly detailed markdown document with a main title and markdown headings
+      (e.g., ## Section Name) for each primary section of the page. Under each section,
+      provide exhaustive lists of EVERY tab, button, filter category, and menu item found.
+      Do not summarize or abbreviate lists. Do not include metadata.
+
+  document_feature_task:
+    description: >
+      You are tasked with documenting a specific feature or section named **'{feature_name}'**
+      located in the **'{tab_name}'** tab by translating an annotated Playwright script.
+
+      **Your Source of Truth:**
+      You are provided with a heavily commented **Playwright Script**. The Python comments (`#`) are your guide.
+      They define the sequence, the purpose of each action, and the description for each user flow.
+      **CRITICAL INSTRUCTION: THE 1-TO-1 MAPPING RULE**
+      You are strictly forbidden from summarizing, combining, or dropping lines of code.
+      EVERY SINGLE `page.locator()`, `page.get_by(...)`, `click()`, and `fill()` action present in the Codegen Log MUST have its own dedicated row in your output table.
+
+      If a comment covers multiple clicks (e.g., selecting 5 checkboxes), you MUST create 5 separate rows in your table (e.g., A.1.1, A.1.2, A.1.3), mapping each individual Playwright line to a step.
+      Do NOT drop the clicks that open dropdown menus, focus search boxes, or close panels.
+      **CRITICAL INSTRUCTION: THE NO LAZINESS RULE**
+      You MUST process the entire Codegen Log from the very first line to the very last line.
+      You are STRICTLY FORBIDDEN from stopping early, summarizing the rest of the document, or using phrases like "(*Table continues...*)", "etc.", or "...".
+      If the log has 150 lines of Playwright code, your table MUST have exactly 150 rows. DO NOT STOP UNTIL EVERY LINE IS MAPPED.
+      **Your Instructions:**
+      1.  **Prioritize Comments:** Read the script line-by-line. The comments dictate the "User Flow Description".
+      2.  **Extract Locators:** The code immediately following a comment provides the "Exact Locator".
+      3.  **Maintain Sequence:** The order of flows MUST EXACTLY match the code.
+      4.  **Critical Filter Rule:** Ensure the final user flow for a filter section clicks "Apply".
+      5.  **No Hallucination:** Only document what the code *actually does*.
+      6.  **Maintain Continuity:** ALWAYS, ALWAYS Maintain continuity. Every Line of code in the Codegen Script is dependent on the previous lines. NEVER skip or break the flow of execution as recorded in the Codegen Logs.
+      6.  **Format:** Output ONLY the Markdown table specified below.
+      **Annotated Playwright Script (PRIMARY SOURCE OF TRUTH):**
+      ---
+      {codegen_script_content}
+      ---
+    expected_output: >
+      A highly detailed markdown document containing a single summary table of user flows, derived directly from the annotated script. Use this exact structure:
+
+      # Feature: {feature_name}
+      **Tab Location:** {tab_name}
+      ## User Interaction Flows
+      | User Flow ID | User Flow Description | Exact Locator | Pass/Fail |
+      |---|---|---|---|
+      | A.1 | (The description from the comment for the first group of actions) | (The primary locator for this group) | --- |
+      | A.1.1 | (The description from the comment for the first specific action) | (The locator for that specific action) | --- |
+
+  check_hallucination_task:
+    description: >
+      You are tasked with reviewing and correcting the drafted feature documentation provided by the previous agent.
+
+      **Your Inputs:**
+      1. The drafted Markdown documentation (provided to you as context).
+      2. The original **Annotated Codegen Log** (provided below).
+      **Your Audit Checklist:**
+      1. **The 1-to-1 Rule:** Count every action in the Codegen Log. Count the "Exact Locator" entries in the drafted table. THEY MUST MATCH EXACTLY.
+      2. **The Completeness Check (NO LAZINESS):** Look at the drafted table. Did the previous agent stop early? Did it write "Table continues..." or use ellipses? If so, YOU MUST REWRITE THE ENTIRE TABLE AND FINISH IT. Do not leave any line of the Codegen Log undocumented.
+      3. **Restore Dropped Steps:** Split summarized checkbox clicks into individual rows.
+      4. **Restore State-Togglers:** Ensure clicks that open dropdowns or close menus are documented.
+      5. **Remove Narrative Hallucinations:** Remove assumptions. Only document the exact code.
+      6. **Maintain Continuity (High Priority):** ALWAYS, ALWAYS ensure that whenever you modify, delete or change content in the Markdown file, it ALWAYS follows the flow of interactions in the Codegen Logs.
+      **Original Annotated Codegen Log:**
+      ---
+      {codegen_script_content}
+      ---
+    expected_output: >
+      The COMPLETE, finalized, and corrected Markdown document. Do not output just a list of fixes; output the final document perfectly formatted and ready to be saved to disk.
+
+  fix_test_task:
+    description: >
+      You are tasked with fixing a broken Pytest function. You will be provided
+      with the exact failed function, its error log, the full script it belongs to,
+      and the original codegen log that inspired it.
+      **Your Primary Directive: Analyze the Error Log First.**
+      1.  **Analyze the Error:** Is it a `TimeoutError`? This means the element was not visible. The step before it likely failed to open the correct menu or panel. You must add the precedent action into the test.
+      2.  **Analyze the Error:** Is it a `Strict Mode Violation`? This means your locator is too broad. You MUST use locator chaining to narrow the scope (e.g., `shared_page.locator("#parent-div").get_by_role("button", name="Submit")`).
+      3.  **Consult the Codegen Log:** The original codegen log contains the raw, successful sequence of user actions. Use it as the ultimate reference to correct the broken test's logic or locators.
+      4.  **Rewrite the Function:** Rewrite the entire `def test_...` function with your proposed fix. Ensure it maintains the `shared_page: Page` signature.
+      5.  **Maintain Delays:** Remember to include strategic `wait_for_timeout()` calls for stability.
+      **CRITICAL:** Your final output must be ONLY the complete, corrected Python function block, starting with `def test_...` and including its docstring and all its code. Do not include any other text or explanation.
+      **CONTEXT FOR DEBUGGING:**
+      **1. The Full Pytest Script (for context on surrounding tests):**
+      ---
+      {full_script_content}
+      ---
+      **2. The Original Codegen Log (the "ground truth" sequence):**
+      ---
+      {original_codegen_log}
+      ---
+      **3. The Exact Failed Function:**
+      ---
+      {failed_function_code}
+      ---
+      **4. The Exact Error Log / Traceback:**
+      ---
+      {failure_log}
+      ---
+    expected_output: >
+      A single, complete, and corrected Python function block starting with `def test_...`.
+
+  draft_high_level_task:
+    description: >
+      Please act as a High-Level Flow Architect. Your task is to identify the major user interactions
+      from the provided Playwright script.
+
+      **Your Instructions:**
+      1. Read the Python comments (`#`) in the script. They group the code into logical sections.
+      2. Extract ONLY the high-level functional flows (e.g., "A.1 Apply Time Filter", "B.1 Interact with Grid").
+      3. Do NOT document individual clicks, text fills, or exact locators at this stage. Keep it high-level.
+
+      **Annotated Playwright Script:**
+      ---
+      {codegen_script_content}
+      ---
+    expected_output: >
+      A simple Markdown document outlining ONLY the major functional flows.
+
+      # Feature: {feature_name}
+      **Tab Location:** {tab_name}
+
+      ## Major User Flows Outline
+      | Flow ID | Functional Description |
+      |---|---|
+      | A.1 | (e.g., Configure Product Hierarchy Filters) |
+      | B.1 | (e.g., Apply Weekly Trend Graph Settings) |
+
+  expand_details_task:
+    description: >
+      You are a Strict Markdown Table Formatter. You are provided with a high-level outline
+      of Major User Flows, and the original Playwright script.
+
+      **Your Task:**
+      Expand the high-level outline into a fully detailed UAT Test Table by mapping the exact Playwright
+      lines of code to the steps.
+
+      **ULTRA-STRICT MACHINE PARSING RULES (DO NOT DEVIATE):**
+      Your output is being fed directly into a Python script. If you break these rules, the system crashes.
+
+      1. **Column Count:** You MUST generate a Markdown table with EXACTLY 4 columns: `| Use Case ID | Test Case Description | Exact Locator | Pass/Fail |`
+      2. **Column 1 (Use Case ID):** Must be standard numbering (A.1, A.1.1, A.1.2). Leave empty ONLY if it is a Section Header.
+      3. **Column 2 (Description):** MUST be plain English. NEVER put code here.
+      4. **Column 3 (Locator):** MUST contain the raw Playwright code, and it MUST be wrapped in backticks (e.g., `page.get_by_text("Apply").click()`).
+      5. **Column 4 (Pass/Fail):** Always output `---`.
+      6. **Section Headers (CRITICAL):** Whenever starting a new major flow (like A.1, B.1), you MUST inject a visual section header row immediately above it. To do this, format the row EXACTLY like this: `| | --- YOUR HEADER TITLE HERE --- | | --- |` (Notice the spaces before and after the dashes).
+      7. **NO BLANK LINES IN TABLE (CRITICAL):** The table MUST be one continuous block. Do NOT insert empty lines or line breaks between rows.
+
+      **Formatting Requirements:**
+      Generate the entire expanded table in a single response. Do not use conversational filler, ellipses (...), or placeholders like "Table continues".
+
+      **Original Annotated Codegen Log:**
+      ---
+      {codegen_script_content}
+      ---
+    expected_output: >
+      The final, comprehensive Markdown table structured perfectly for the Python parser.
+
+      # Feature: {feature_name}
+      **Tab Location:** {tab_name}
+
+      ## Detailed User Interaction Flows
+
+      | Use Case ID | Test Case Description | Exact Locator | Pass/Fail |
+      |---|---|---|---|
+      | | --- PRODUCT HIERARCHY FILTERS --- | | --- |
+      | A.1 | Configure Product Hierarchy Filters | | --- |
+      | A.1.1 | Open "Merchandise Division" filter | `page.get_by_text("Merchandise Division").click()` | --- |
+      | A.1.2 | Select all options | `page.get_by_role("checkbox", name="Select All").click()` | --- |

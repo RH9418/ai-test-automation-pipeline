@@ -1,0 +1,21 @@
+#NOTE: Python version being used here is Python 3.13.13, pip version is pip 26.0.1 
+
+
+# --- Core LLM & Orchestration Frameworks ---
+langgraph
+langchain-openai
+langchain-core
+crewai[azure-ai-inference]
+
+# --- Testing & Browser Automation ---
+playwright
+pytest
+pytest-order
+
+# --- Data Processing & Excel Generation ---
+pandas
+openpyxl
+pyyaml
+
+# --- Environment & Configuration ---
+python-dotenv

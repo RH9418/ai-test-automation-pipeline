@@ -1,0 +1,37 @@
+# --- Security / Secrets ---
+# CRITICAL: Never commit your Azure API keys!
+.env
+
+# --- Python Virtual Environment ---
+venv/
+env/
+ENV/
+.venv/
+
+# --- Python Cache & Bytecode ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# --- Pytest ---
+.pytest_cache/
+
+# --- Playwright ---
+test-results/
+playwright-report/
+
+# --- Heavy Generated Artifacts ---
+# You want to ignore the screenshots so your GitHub repository doesn't balloon to several Gigabytes.
+Test_Screenshots/
+
+# (Optional) Uncomment the lines below if you don't want to track generated scripts and docs in version control.
+# Enhanced_Logs/
+# Annotated_Logs/
+# Generated_Documentation/
+# UAT_Excel_Reports/
+# Generated_Scripts/
+
+# --- OS Generated Files ---
+.DS_Store
+Thumbs.db
