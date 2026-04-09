@@ -21,7 +21,6 @@ load_dotenv()
 
 API_DELAY = int(os.environ.get("RATE_LIMIT_DELAY", 15))
 
-
 # --- Configuration Loader ---
 def load_yaml(file_path: str) -> dict:
     with open(file_path, 'r', encoding='utf-8') as f:
@@ -144,7 +143,8 @@ def capture_annotated_screenshot(page: Page, locator, full_action_description: s
         page.evaluate("() => { document.getElementById('ge-spotlight-box')?.remove(); document.getElementById('ge-spotlight-label')?.remove(); }")
     except Exception as e: print(f"   └── ⚠️ Screenshot Error: {e}")
 
-def safe_action(page: Page, locator, action_name: str, description: str, *action_args):
+# 🔴 FIX: Added **action_kwargs to the signature
+def safe_action(page: Page, locator, action_name: str, description: str, *action_args, **action_kwargs):
     '''Performs action with spotlight screenshots and manual fallbacks.'''
     full_desc = f"{action_name.capitalize()}: {description}"
     if action_name == 'fill': full_desc += f" with '{action_args[0] if action_args else ''}'"
@@ -169,9 +169,11 @@ def safe_action(page: Page, locator, action_name: str, description: str, *action
         if locator != page:
             capture_annotated_screenshot(page, locator, full_desc)
             action_func = getattr(locator, action_name)
-            action_func(*action_args)
+            # 🔴 FIX: Pass **action_kwargs to Playwright
+            action_func(*action_args, **action_kwargs)
         else:
-            if action_name == 'goto': page.goto(*action_args)
+            # 🔴 FIX: Pass **action_kwargs to page.goto as well
+            if action_name == 'goto': page.goto(*action_args, **action_kwargs)
                 
         print(f"✅ SUCCESS: {description}")
     except Exception as e:
@@ -194,7 +196,6 @@ def process_annotated_script_to_docs(annotated_code: str, feature_name: str, tab
     print(f"\n--- [PHASE 1] Generating Markdown Documentation (Chunk-by-Chunk) ---")
     agents_config = load_yaml('configs/agents.yaml')['agents']
     
-    # 🔴 FIX: Upgraded to strict 6-column format matching the Excel sheet
     master_md = (
         f"# Feature: {feature_name}\n"
         f"**Tab Location:** {tab_name}\n\n"
@@ -230,7 +231,7 @@ def process_annotated_script_to_docs(annotated_code: str, feature_name: str, tab
                     f"CRITICAL RULES FOR NO DATA LOSS:\n"
                     f"1. You MUST generate EXACTLY {expected_count} rows containing locators. Every single Playwright action MUST get its own row.\n"
                     "2. DO NOT include the markdown table header. Output ONLY the table body rows.\n"
-                    f"3. Start the section with a header row exactly like this: `| | **--- {sec['name'].upper()} ---** | | | | |`\n"
+                    f"3. Start the section with a header row exactly like this: `| | **--- {sec['name'].upper()} ---** | | | | |\`\n"
                     f"4. Use the prefix '{section_prefix}' for the Use Case IDs (e.g., {section_prefix}.1, {section_prefix}.2).\n\n"
                     "GUIDEBOOK FORMATTING RULES:\n"
                     "1. The 'Test Case Description' column MUST be highly readable for manual testers. Write it like an instruction manual or guidebook.\n"
@@ -265,18 +266,15 @@ def process_annotated_script_to_docs(annotated_code: str, feature_name: str, tab
                 
     return master_md
 
-
-
 # ====================================================================
 # PHASE 2: Generate Pytest Scripts (CHUNKED)
 # ====================================================================
 def process_docs_to_pytest(uat_content: str, annotated_code: str, output_pytest_path: str, sections: list):
     print(f"\n--- [PHASE 2] Generating Smart Pytest Scripts (Chunk-by-Chunk) ---")
     agents_config = load_yaml('configs/agents.yaml')['agents']
-
     master_pytest = FALLBACK_INJECTION_BLOCK + "\n\n"
     prev_context = "None. This is the first test function."
-
+    
     for i, sec in enumerate(sections):
         chunk_code = extract_lines(annotated_code, sec['start_line'], sec['end_line'])
         expected_count = count_expected_actions(chunk_code)
@@ -288,9 +286,7 @@ def process_docs_to_pytest(uat_content: str, annotated_code: str, output_pytest_
         func_name = re.sub(r'[^a-zA-Z0-9_]', '_', sec['name'].lower())
         
         for attempt in range(3):
-            # 🔴 FIX: Instantiate fresh agent INSIDE the loop to wipe memory
             automation_agent = Agent(role=agents_config['automation_agent']['role'], goal=agents_config['automation_agent']['goal'], backstory=agents_config['automation_agent']['backstory'], allow_delegation=False, llm=azure_llm)
-
             task = Task(
                 description=(
                     "You are an Expert SDET. Convert the provided Code Snippet into a SINGLE Pytest function.\n"
@@ -315,8 +311,7 @@ def process_docs_to_pytest(uat_content: str, annotated_code: str, output_pytest_
                 elif cleaned_code.startswith("```"): cleaned_code = cleaned_code[3:]
                 if cleaned_code.endswith("```"): cleaned_code = cleaned_code[:-3]
                 cleaned_code = cleaned_code.strip()
-
-                # 🔴 FIX: Relaxed count criteria slightly in case LLM names the page argument differently
+                
                 actual_action_count = cleaned_code.count("safe_action(")
                 
                 if actual_action_count >= expected_count:
@@ -331,11 +326,10 @@ def process_docs_to_pytest(uat_content: str, annotated_code: str, output_pytest_
             except Exception as e:
                 print(f"       ⚠️ API Error: {e}. Retrying after {API_DELAY}s...")
                 time.sleep(API_DELAY)
-
+                
     with open(output_pytest_path, 'w', encoding='utf-8') as f:
         f.write(master_pytest)
     print(f"\n✅ Successfully generated final Pytest script: {output_pytest_path}")
-
 
 import pandas as pd
 from openpyxl.styles import Font, Alignment, PatternFill
@@ -476,14 +470,12 @@ def run_step_3_generate_excel_uat(docs_dir: str, excel_dir: str):
             
     print(f"\n--- Excel Conversion Complete! Created {processed_count} files. ---")
 
-
 # --- Execution Entry Point ---
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Orchestrate CrewAI generation via Semantic Chunking.")
     parser.add_argument('--step', type=int, choices=[1, 2, 3], help="Phase to run (1: Docs, 2: Pytest, 3: Excel). If omitted, runs all.")
     parser.add_argument('--files', nargs='*', help="Specific annotated script names to process.")
     args = parser.parse_args()
-
 
     annotated_logs_dir = "Annotated_Logs"
     output_docs_dir = "Generated_Documentation"
@@ -538,5 +530,6 @@ if __name__ == "__main__":
             else:
                 with open(doc_output_path, 'r', encoding='utf-8') as f: uat_content = f.read()
                 process_docs_to_pytest(uat_content, annotated_code, pytest_output_path, sections)
+                
         if run_step_3:
             run_step_3_generate_excel_uat(output_docs_dir, output_excel_dir)

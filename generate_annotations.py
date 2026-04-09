@@ -31,19 +31,36 @@ def encode_image(image_path: str) -> str:
         return base64.b64encode(image_file.read()).decode("utf-8")
 
 # --- Node 1: File Loader ---
+# --- Node 1: File Loader ---
 def load_files(state: AgentState) -> dict:
-    script_path = os.path.join("Codegen_Logs", state["script_name"])
+    script_path = os.path.join("Enhanced_Logs", state["script_name"])
     
     with open(script_path, "r", encoding="utf-8") as f:
         raw_code = f.read()
 
     # Add line numbers to the code so the LLM can reference exactly where to put comments
     numbered_code = "\n".join([f"{i+1}: {line}" for i, line in enumerate(raw_code.split('\n'))])
-
-    # Load all screenshots chronologically
-    screenshot_paths = sorted(glob.glob("Test_Screenshots/*.png"))
     
-    print(f"\nLoaded script: {state['script_name']} | Total Images found: {len(screenshot_paths)}")
+    # Dynamically map to the specific screenshot subdirectory safely using os.path.join
+    script_base_name = state["script_name"].replace(".py", "").replace("_enhanced", "")
+    target_screenshot_dir = os.path.join("Test_Screenshots", script_base_name)
+    
+    print(f"\n[DEBUG] Searching for screenshots in: {os.path.abspath(target_screenshot_dir)}")
+    
+    # 🔴 FIX: Use os.listdir instead of glob to guarantee we find the files on Windows
+    if not os.path.exists(target_screenshot_dir):
+        print(f"[DEBUG] ❌ Directory does not exist! Check your folder names.")
+        screenshot_paths = []
+    else:
+        screenshot_paths = [
+            os.path.join(target_screenshot_dir, f) 
+            for f in os.listdir(target_screenshot_dir) 
+            if f.endswith('.png')
+        ]
+        # Sort them chronologically based on your timestamped filenames
+        screenshot_paths.sort()
+    
+    print(f"Loaded script: {state['script_name']} | Total Images found: {len(screenshot_paths)}")
     
     return {
         "raw_code": raw_code,
@@ -51,11 +68,13 @@ def load_files(state: AgentState) -> dict:
         "screenshot_paths": screenshot_paths,
         "comments": [] # Initialize empty list
     }
+    
 
 # --- Node 2: The Planner (Text-Only Semantic Chunker) ---
 # --- Node 2: The Planner (Text-Only Semantic Chunker) ---
+# --- Node 2: The Planner (Overlap Sliding Window Chunker) ---
 def plan_semantic_sections(state: AgentState) -> dict:
-    print("🧠 Planning semantic sections based on user flows...")
+    print("🧠 Planning semantic sections using Overlap Sliding Window...")
     
     llm = AzureChatOpenAI(
         api_key=os.environ.get("AZURE_API_KEY"),
@@ -66,42 +85,88 @@ def plan_semantic_sections(state: AgentState) -> dict:
     ).bind(response_format={"type": "json_object"})
 
     filenames = [os.path.basename(p) for p in state["screenshot_paths"]]
-
-    system_prompt = (
-        "You are an Expert QA Architect. Your job is to semantically divide a Playwright script into cohesive, logical sections.\n"
-        "CRITICAL INSTRUCTIONS:\n"
-        "1. Break the entire script into non-overlapping semantic sections.\n"
-        "2. EXHAUSTIVE MAPPING: Every single line of code MUST belong to exactly one section. Do not leave gaps.\n"
-        "3. Provide the `start_line` and `end_line`.\n"
-        "4. ALIGNING IMAGES: Select ALL `image_filenames` from the provided list that correspond to the actions within this specific section's line range. Return them as a list of strings. If none apply, return an empty list [].\n"
-        "5. Return ONLY a JSON object."
-    )
-
-    message_content = (
-        f"Numbered Code:\n{state['numbered_code']}\n\n"
-        f"Available Screenshot Filenames (Chronological):\n{json.dumps(filenames, indent=2)}\n\n"
-        "EXPECTED JSON FORMAT:\n"
-        "{\n"
-        '  "sections": [\n'
-        '    {\n'
-        '      "name": "Initial Setup & Navigation",\n'
-        '      "start_line": 1,\n'
-        '      "end_line": 12,\n'
-        '      "image_filenames": ["12-14-31_02_click__...png", "12-14-35_03_click__...png"]\n'
-        '    }\n'
-        "  ]\n"
-        "}"
-    )
-
-    response = llm.invoke([SystemMessage(content=system_prompt), HumanMessage(content=message_content)])
+    raw_lines = state["raw_code"].split('\n')
+    total_lines = len(raw_lines)
     
-    try:
-        sections = json.loads(response.content).get("sections", [])
-        print(f"✅ Divided code into {len(sections)} semantic sections.")
-        return {"sections": sections}
-    except Exception as e:
-        print(f"❌ Failed to parse Planner JSON: {e}")
-        return {"sections": []}
+    WINDOW_SIZE = 150
+    OVERLAP = 20
+    
+    all_sections = []
+    last_processed_line = 0
+
+    # Slide through the file with an overlap
+    start_idx = 0
+    while start_idx < total_lines:
+        end_idx = min(start_idx + WINDOW_SIZE, total_lines)
+        
+        # Extract the chunk and number it globally
+        chunk_lines = raw_lines[start_idx:end_idx]
+        numbered_chunk = "\n".join([f"{start_idx + i + 1}: {line}" for i, line in enumerate(chunk_lines)])
+        
+        print(f"   └── Planning window: Lines {start_idx + 1} to {end_idx}...")
+        
+        system_prompt = (
+            "You are an Expert QA Architect. Your job is to semantically divide a portion of a Playwright script into cohesive, logical sections.\n"
+            "CRITICAL INSTRUCTIONS:\n"
+            f"1. You MUST start planning from line {last_processed_line + 1}. Do not plan sections for lines before this.\n"
+            "2. Break the code into non-overlapping semantic sections (e.g., 'Initial Navigation', 'Applying Filters').\n"
+            "3. EXHAUSTIVE MAPPING: Every line from your starting point must belong to a section. Do not leave gaps.\n"
+            "4. THE OVERLAP RULE: If a logical user flow starts near the end of this snippet but seems incomplete, DO NOT include it in your final section. Stop your planning at the end of the last complete flow. Another agent will handle the rest of the file.\n"
+            "5. Provide the `start_line` and `end_line` using the EXACT line numbers shown in the text.\n"
+            "6. ALIGNING IMAGES: Select ALL `image_filenames` from the provided list that correspond to the actions in the section.\n"
+            "7. Return ONLY a JSON object."
+        )
+        
+        message_content = (
+            f"Numbered Code Snippet:\n{numbered_chunk}\n\n"
+            f"Available Screenshot Filenames (Chronological):\n{json.dumps(filenames, indent=2)}\n\n"
+            "EXPECTED JSON FORMAT:\n"
+            "{\n"
+            '  "sections": [\n'
+            '    {\n'
+            '      "name": "Columns Configuration",\n'
+            f'      "start_line": {max(start_idx + 1, last_processed_line + 1)},\n'
+            f'      "end_line": {start_idx + 12},\n'
+            '      "image_filenames": ["12-14-31_02_click__...png"]\n'
+            '    }\n'
+            "  ]\n"
+            "}"
+        )
+        
+        response = llm.invoke([SystemMessage(content=system_prompt), HumanMessage(content=message_content)])
+        
+        try:
+            chunk_sections = json.loads(response.content).get("sections", [])
+            
+            if chunk_sections:
+                # Add the parsed sections to our master list
+                all_sections.extend(chunk_sections)
+                
+                # Update our tracking variable so the next window knows where to pick up
+                last_processed_line = chunk_sections[-1]["end_line"]
+                print(f"       ✅ Found {len(chunk_sections)} sections. Processed up to line {last_processed_line}.")
+                
+                # Move the window forward, starting exactly where the LLM left off (minus a tiny safety buffer)
+                start_idx = last_processed_line
+            else:
+                print("       ⚠️ LLM returned no sections for this window. Forcing window forward.")
+                start_idx += WINDOW_SIZE - OVERLAP
+
+            import time
+            time.sleep(2) # Prevent rate limits
+            
+        except Exception as e:
+            print(f"       ❌ Failed to parse Planner JSON for window {start_idx + 1}-{end_idx}: {e}")
+            # If it fails, force the window forward so we don't get stuck in an infinite loop
+            start_idx += WINDOW_SIZE - OVERLAP
+
+        # Break the loop if we have successfully mapped the entire file
+        if last_processed_line >= total_lines - 5: # Allow a 5-line margin for trailing whitespace/teardown
+            break
+
+    print(f"✅ Total script divided into {len(all_sections)} continuous semantic sections.")
+    return {"sections": all_sections}
+
 
 
 # --- Node 3: The Worker (Multimodal Annotator) ---

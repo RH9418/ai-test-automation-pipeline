@@ -165,8 +165,8 @@ ENHANCED_LOG_DIR = "Enhanced_Logs" # New dedicated output directory
 BASE_SCREENSHOT_DIR = "Test_Screenshots"
 
 # --- Code Blocks to be Injected ---
-# We use a placeholder [[SCREENSHOT_DIR_PLACEHOLDER]] to dynamically assign a folder for each script
-FULL_INJECTION_BLOCK = """
+# NOTICE THE 'r' PREFIX HERE. THIS IS CRITICAL FOR PREVENTING SYNTAX ERRORS!
+FULL_INJECTION_BLOCK = r"""
 import os
 import sys
 import time
@@ -182,7 +182,7 @@ if not os.path.exists(SCREENSHOT_DIR):
 screenshot_counter = 0
 
 def capture_annotated_screenshot(page, locator, full_action_description: str):
-    \"\"\"Highlights element with a thick red box and glow, then captures screenshot.\"\"\"
+    '''Highlights element with a thick red box and glow, then captures screenshot.'''
     global screenshot_counter
     screenshot_counter += 1
     
@@ -196,7 +196,7 @@ def capture_annotated_screenshot(page, locator, full_action_description: str):
             print(f"   └── ⚠️ Screenshot Warning: Bounding box null for '{full_action_description}'.")
             return
             
-        js_description = full_action_description.replace("'", "\\\\'")
+        js_description = full_action_description.replace("'", "\\'")
         # 2. Inject a high-visibility "Spotlight" annotation
         page.evaluate(f'''(params) => {{
             const {{ box, desc }} = params;
@@ -246,15 +246,15 @@ def capture_annotated_screenshot(page, locator, full_action_description: str):
         print(f"   └── 📸 Screenshot saved: {path}")
         
         # 4. Clean up
-        page.evaluate(\"\"\"() => {
+        page.evaluate('''() => {
             document.getElementById('ge-spotlight-box')?.remove();
             document.getElementById('ge-spotlight-label')?.remove();
-        }\"\"\")
+        }''')
     except Exception as e:
         print(f"   └── ⚠️ Screenshot Error: {e}")
 
-def safe_action(page, locator, action_name: str, description: str, *action_args):
-    \"\"\"Performs action with spotlight screenshots and manual fallbacks.\"\"\"
+def safe_action(page, locator, action_name: str, description: str, *action_args, **action_kwargs):
+    '''Performs action with spotlight screenshots and manual fallbacks.'''
     full_desc = f"{action_name.capitalize()}: {description}"
     if action_name == 'fill':
         full_desc += f" with '{action_args[0] if action_args else ''}'"
@@ -262,7 +262,7 @@ def safe_action(page, locator, action_name: str, description: str, *action_args)
     try:
         # Pre-Fill Intervention
         if action_name == 'fill':
-            print(f"\\n⏸️ PAUSING FOR INPUT: About to fill '{description}'.")
+            print(f"\n⏸️ PAUSING FOR INPUT: About to fill '{description}'.")
             input("   └── Perform input manually in browser, then PRESS [ENTER] to continue...")
             page.wait_for_load_state('networkidle', timeout=5000)
             return
@@ -274,16 +274,23 @@ def safe_action(page, locator, action_name: str, description: str, *action_args)
                 time.sleep(0.3)
             except: pass
             
-        capture_annotated_screenshot(page, locator, full_desc)
-        
+        if action_name == 'close':
+            try: locator.close()
+            except: pass
+            print(f"✅ SUCCESS: {description} (Teardown handled by Pytest)")
+            return
+            
+        if locator != page:
+            capture_annotated_screenshot(page, locator, full_desc)
+            
         # Execution
         action_func = getattr(locator, action_name)
-        action_func(*action_args)
+        action_func(*action_args, **action_kwargs)
         print(f"✅ SUCCESS: {description}")
     except Exception as e:
         print(f"❌ ERROR: Failed {action_name} on '{description}'.")
         while True:
-            print("\\n" + "="*80 + "\\n ACTION REQUIRED: Script Error\\n" + "="*80)
+            print("\n" + "="*80 + "\n ACTION REQUIRED: Script Error\n" + "="*80)
             print(f" Failed: {full_desc}")
             choice = input(" Did you perform this manually? (y/n): ").lower().strip()
             if choice == 'y': break
@@ -293,17 +300,18 @@ def safe_action(page, locator, action_name: str, description: str, *action_args)
         except: time.sleep(1)
 """
 
-MFA_WAIT_BLOCK = """
-    print(\"\"\"
+# NOTICE THE 'r' PREFIX HERE AS WELL
+MFA_WAIT_BLOCK = r"""
+    print('''
 ================================================================================
   ACTION REQUIRED: MANUAL LOGIN & MFA
 --------------------------------------------------------------------------------
   1. Log in manually. 2. Complete MFA. 3. Wait for dashboard to load.
   ---> PRESS [ENTER] IN THIS TERMINAL WHEN READY <---
 ================================================================================
-\"\"\")
+''')
     input()
-    print("\\n🚀 Starting automated actions...")
+    print("\n🚀 Starting automated actions...")
 """
 
 def process_playwright_file(file_path):
