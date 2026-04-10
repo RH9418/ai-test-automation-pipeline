@@ -1,0 +1,332 @@
+[
+    {
+        "name": "Imports and Setup",
+        "start_line": 1,
+        "end_line": 4
+    },
+    {
+        "name": "Browser Initialization and Page Navigation",
+        "start_line": 5,
+        "end_line": 13
+    },
+    {
+        "name": "Product Total Columns Configuration",
+        "start_line": 14,
+        "end_line": 21
+    },
+    {
+        "name": "Filter Columns Input Interaction",
+        "start_line": 22,
+        "end_line": 31
+    },
+    {
+        "name": "Column Selection and Deselection",
+        "start_line": 32,
+        "end_line": 45
+    },
+    {
+        "name": "Specific Column Selection",
+        "start_line": 46,
+        "end_line": 60
+    },
+    {
+        "name": "Column Selection and Visibility Toggles",
+        "start_line": 61,
+        "end_line": 73
+    },
+    {
+        "name": "Download Data Process",
+        "start_line": 74,
+        "end_line": 81
+    },
+    {
+        "name": "Preference Management",
+        "start_line": 82,
+        "end_line": 91
+    },
+    {
+        "name": "Product Column Configuration",
+        "start_line": 92,
+        "end_line": 105
+    },
+    {
+        "name": "Column Filtering and Selection",
+        "start_line": 106,
+        "end_line": 119
+    },
+    {
+        "name": "Final Visibility Toggle",
+        "start_line": 120,
+        "end_line": 120
+    },
+    {
+        "name": "Toggle All Columns Visibility",
+        "start_line": 121,
+        "end_line": 123
+    },
+    {
+        "name": "Column Selection and Visibility Management",
+        "start_line": 124,
+        "end_line": 153
+    },
+    {
+        "name": "Final Visibility Toggle",
+        "start_line": 154,
+        "end_line": 157
+    },
+    {
+        "name": "Export Process",
+        "start_line": 158,
+        "end_line": 165
+    },
+    {
+        "name": "Preferences Management",
+        "start_line": 166,
+        "end_line": 175
+    },
+    {
+        "name": "Grid Interaction",
+        "start_line": 176,
+        "end_line": 179
+    },
+    {
+        "name": "Product Selection and Filter Activation",
+        "start_line": 180,
+        "end_line": 185
+    },
+    {
+        "name": "Filter Operator Selection and Exploration",
+        "start_line": 186,
+        "end_line": 213
+    },
+    {
+        "name": "Logical Operator and Filter Reset",
+        "start_line": 214,
+        "end_line": 223
+    },
+    {
+        "name": "Filter Application and Row Selection",
+        "start_line": 224,
+        "end_line": 229
+    },
+    {
+        "name": "Row Context Menu and Selection Confirmation",
+        "start_line": 230,
+        "end_line": 235
+    },
+    {
+        "name": "Additional Row Selection",
+        "start_line": 236,
+        "end_line": 239
+    },
+    {
+        "name": "Row Selection and Interaction",
+        "start_line": 240,
+        "end_line": 243
+    },
+    {
+        "name": "Column Header Interaction and Sorting",
+        "start_line": 244,
+        "end_line": 251
+    },
+    {
+        "name": "Filter Options Interaction",
+        "start_line": 252,
+        "end_line": 285
+    },
+    {
+        "name": "Filter Value Input and Application",
+        "start_line": 286,
+        "end_line": 293
+    },
+    {
+        "name": "Filter Clearing and Final Interaction",
+        "start_line": 294,
+        "end_line": 299
+    },
+    {
+        "name": "Reset and Configure Column Visibility Part 1",
+        "start_line": 300,
+        "end_line": 322
+    },
+    {
+        "name": "Reset and Configure Column Visibility Part 2",
+        "start_line": 323,
+        "end_line": 343
+    },
+    {
+        "name": "Export Data",
+        "start_line": 344,
+        "end_line": 349
+    },
+    {
+        "name": "Manage Preferences",
+        "start_line": 350,
+        "end_line": 359
+    },
+    {
+        "name": "Pagination Interaction and Navigation",
+        "start_line": 360,
+        "end_line": 387
+    },
+    {
+        "name": "Row Selection and Card Interaction",
+        "start_line": 388,
+        "end_line": 391
+    },
+    {
+        "name": "Filter Application and Summary Interaction",
+        "start_line": 392,
+        "end_line": 411
+    },
+    {
+        "name": "Dropdown Interaction and Measure Selection",
+        "start_line": 412,
+        "end_line": 419
+    },
+    {
+        "name": "Measure Selection - User Suggested and Override",
+        "start_line": 420,
+        "end_line": 427
+    },
+    {
+        "name": "Checkbox Interaction - Initial Toggles",
+        "start_line": 428,
+        "end_line": 433
+    },
+    {
+        "name": "Measure Selection - ION Suggested and Gross Units",
+        "start_line": 434,
+        "end_line": 441
+    },
+    {
+        "name": "Dropdown Interaction - Deselect and Modify",
+        "start_line": 442,
+        "end_line": 445
+    },
+    {
+        "name": "Checkbox Interaction - Additional Toggles",
+        "start_line": 446,
+        "end_line": 449
+    },
+    {
+        "name": "Measure Selection - Aged Net Units and Scan Units",
+        "start_line": 450,
+        "end_line": 457
+    },
+    {
+        "name": "Child Element Selection - Overflow Container",
+        "start_line": 458,
+        "end_line": 461
+    },
+    {
+        "name": "Measure Selection - Scan Units and Select All",
+        "start_line": 462,
+        "end_line": 467
+    },
+    {
+        "name": "Interaction with 'All' and Daily Summary Card",
+        "start_line": 468,
+        "end_line": 471
+    },
+    {
+        "name": "Filter Columns Input and Column Selection",
+        "start_line": 472,
+        "end_line": 477
+    },
+    {
+        "name": "Column Visibility Toggle",
+        "start_line": 478,
+        "end_line": 479
+    },
+    {
+        "name": "Column Visibility Management",
+        "start_line": 480,
+        "end_line": 489
+    },
+    {
+        "name": "Daily Summary Product Interaction",
+        "start_line": 490,
+        "end_line": 493
+    },
+    {
+        "name": "Toggle Individual Column Visibility",
+        "start_line": 494,
+        "end_line": 519
+    },
+    {
+        "name": "Toggle All Columns Visibility",
+        "start_line": 520,
+        "end_line": 521
+    },
+    {
+        "name": "Daily Summary Product Re-Interaction",
+        "start_line": 522,
+        "end_line": 523
+    },
+    {
+        "name": "Export Process",
+        "start_line": 524,
+        "end_line": 531
+    },
+    {
+        "name": "Preference Management",
+        "start_line": 532,
+        "end_line": 539
+    },
+    {
+        "name": "Grid Header and Column Interactions",
+        "start_line": 540,
+        "end_line": 553
+    },
+    {
+        "name": "Grid Chevron and Text Interactions",
+        "start_line": 554,
+        "end_line": 563
+    },
+    {
+        "name": "Daily Trend and Line-Bar Chart Interactions",
+        "start_line": 564,
+        "end_line": 573
+    },
+    {
+        "name": "Dropdown and Filter Selections",
+        "start_line": 574,
+        "end_line": 583
+    },
+    {
+        "name": "Line-Bar Chart and Grid Element Interactions",
+        "start_line": 584,
+        "end_line": 599
+    },
+    {
+        "name": "Interaction with Line-Bar Chart Elements",
+        "start_line": 600,
+        "end_line": 607
+    },
+    {
+        "name": "Preference Management Actions",
+        "start_line": 608,
+        "end_line": 617
+    },
+    {
+        "name": "Table Element Interactions",
+        "start_line": 618,
+        "end_line": 627
+    },
+    {
+        "name": "Chart and Graph Interactions",
+        "start_line": 628,
+        "end_line": 645
+    },
+    {
+        "name": "Browser Context Cleanup",
+        "start_line": 647,
+        "end_line": 651
+    },
+    {
+        "name": "Playwright Execution",
+        "start_line": 654,
+        "end_line": 655
+    }
+]

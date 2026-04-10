@@ -27,7 +27,6 @@ def load_yaml(file_path: str) -> dict:
         return yaml.safe_load(f)
 
 # --- LLM Configurations ---
-# LangChain wrapper (for the JSON Planner)
 planner_llm = AzureChatOpenAI(
     api_key=os.environ.get("AZURE_API_KEY"),
     azure_endpoint=os.environ.get("AZURE_ENDPOINT"),
@@ -36,7 +35,6 @@ planner_llm = AzureChatOpenAI(
     temperature=0.0,
 ).bind(response_format={"type": "json_object"})
 
-# CrewAI native LLM (for the Workers)
 azure_llm = LLM(
     model=f"azure/{os.environ.get('AZURE_DEPLOYMENT_NAME')}", 
     api_key=os.environ.get("AZURE_API_KEY"),
@@ -51,7 +49,6 @@ azure_llm = LLM(
 # ====================================================================
 def count_expected_actions(raw_code_content: str) -> int:
     """Accurately counts every actionable Playwright line in a snippet."""
-    # 🔴 FIX: Restored the regex to count raw Playwright actions
     action_regex = re.compile(r"\.(click|fill|check|uncheck|press|hover|goto|dblclick)\(")
     expected_action_count = 0
     for line in raw_code_content.split('\n'):
@@ -65,10 +62,8 @@ def plan_semantic_sections(annotated_code: str) -> list:
     raw_lines = annotated_code.split('\n')
     total_lines = len(raw_lines)
     
-    # 🔴 FIX 1: Strict window size guarantees no chunk will ever have > 60 lines
     WINDOW_SIZE = 60 
     OVERLAP = 15
-    
     all_sections = []
     last_processed_line = 0
     start_idx = 0
@@ -105,7 +100,6 @@ def plan_semantic_sections(annotated_code: str) -> list:
         
         try:
             chunk_sections = json.loads(response.content).get("sections", [])
-            
             if chunk_sections:
                 all_sections.extend(chunk_sections)
                 last_processed_line = chunk_sections[-1]["end_line"]
@@ -115,8 +109,7 @@ def plan_semantic_sections(annotated_code: str) -> list:
                 print("       ⚠️ LLM returned no sections. Forcing window forward.")
                 start_idx += WINDOW_SIZE - OVERLAP
                 
-            time.sleep(2) # Prevent rate limits
-            
+            time.sleep(2)
         except Exception as e:
             print(f"       ❌ Failed to parse Planner JSON for window {start_idx + 1}-{end_idx}: {e}")
             start_idx += WINDOW_SIZE - OVERLAP
@@ -124,8 +117,6 @@ def plan_semantic_sections(annotated_code: str) -> list:
         if last_processed_line >= total_lines - 5: 
             break
 
-    # 🔴 FIX 2: Procedural Sub-Chunking Safety Net
-    # If any section somehow exceeds 40 lines, split it in half to prevent LLM fatigue in the Worker agents.
     safe_sections = []
     for sec in all_sections:
         sec_len = sec['end_line'] - sec['start_line'] + 1
@@ -138,7 +129,6 @@ def plan_semantic_sections(annotated_code: str) -> list:
 
     print(f"✅ Total script divided into {len(safe_sections)} safe, manageable chunks.")
     return safe_sections
-
 
 def extract_lines(code: str, start: int, end: int) -> str:
     lines = code.split('\n')
@@ -269,6 +259,7 @@ def process_annotated_script_to_docs(annotated_code: str, feature_name: str, tab
             
         print(f"   └── 📝 UAT Section {i+1}/{len(sections)}: {sec['name']} (Expected Actions: {expected_count})")
         section_prefix = chr(65 + i) 
+        current_delay = API_DELAY
         
         for attempt in range(3):
             expander_agent = Agent(
@@ -285,12 +276,11 @@ def process_annotated_script_to_docs(annotated_code: str, feature_name: str, tab
                     f"CRITICAL RULES FOR NO DATA LOSS:\n"
                     f"1. You MUST generate EXACTLY {expected_count} rows containing locators. Every single Playwright action MUST get its own row.\n"
                     "2. DO NOT include the markdown table header. Output ONLY the table body rows.\n"
-                    # 🔴 FIX: Removed the backslashes from the backticks so there is no Syntax Warning!
                     f"3. Start the section with a header row exactly like this: `| | **--- {sec['name'].upper()} ---** | | | | |`\n"
                     f"4. Use the prefix '{section_prefix}' for the Use Case IDs (e.g., {section_prefix}.1, {section_prefix}.2).\n\n"
                     "GUIDEBOOK FORMATTING RULES:\n"
                     "1. The 'Test Case Description' column MUST be highly readable for manual testers. Write it like an instruction manual or guidebook.\n"
-                    "2. Instead of robotic fragments (e.g., 'Click button'), write clear, descriptive steps explaining exactly what to do and where to look (e.g., 'From the filter panel on the left, click on the \"Apply Filters\" button to execute the search.').\n"
+                    "2. Instead of robotic fragments (e.g., 'Click button'), write clear, descriptive steps explaining exactly what to do and where to look.\n"
                     "3. You MUST use exactly 6 columns: `| Use Case ID | Test Case Description | Exact Locator | Pass/Fail | Notes | Issues |`\n"
                     "4. Column 3 MUST contain the EXACT raw Playwright code line wrapped in backticks (e.g. `page.locator(...).click()`).\n"
                     "5. Columns 4, 5, and 6 must be empty cells (just a space between pipes: `| | | |`).\n\n"
@@ -313,35 +303,30 @@ def process_annotated_script_to_docs(annotated_code: str, feature_name: str, tab
                     time.sleep(API_DELAY)
                     break
                 else:
-                    print(f"       ❌ Dropped lines ({md_action_count}/{expected_count}). Retrying after {API_DELAY}s...")
-                    time.sleep(API_DELAY)
+                    current_delay += 5
+                    print(f"       ❌ Dropped lines ({md_action_count}/{expected_count}). Retrying after {current_delay}s...")
+                    time.sleep(current_delay)
             except Exception as e:
-                print(f"       ⚠️ API Error: {e}. Retrying after {API_DELAY}s...")
-                time.sleep(API_DELAY)
+                current_delay += 5
+                print(f"       ⚠️ API Error: {e}. Retrying after {current_delay}s...")
+                time.sleep(current_delay)
                 
     return master_md
 
 # ====================================================================
-# PHASE 2: Generate Pytest Scripts (CHUNKED)
+# PHASE 2: Generate Pytest Scripts (100% PROCEDURAL WRAPPING)
 # ====================================================================
-# ====================================================================
-# PHASE 2: Generate Pytest Scripts (PROCEDURALLY WRAPPED)
-# ====================================================================
-# ====================================================================
-# PHASE 2: Generate Pytest Scripts (PROCEDURALLY WRAPPED)
-# ====================================================================
-def process_docs_to_pytest(uat_content: str, annotated_code: str, output_pytest_path: str, sections: list):
-    print(f"\n--- [PHASE 2] Generating Smart Pytest Scripts (Procedural Wrapping) ---")
-    agents_config = load_yaml('configs/agents.yaml')['agents']
+def process_docs_to_pytest(annotated_code: str, output_pytest_path: str, sections: list):
+    print(f"\n--- [PHASE 2] Generating Smart Pytest Scripts (100% Procedural Wrapping) ---")
     master_pytest = FALLBACK_INJECTION_BLOCK + "\n\n"
-    prev_context = "None. This is the first test function."
     
-    procedural_regex = re.compile(
-        r"^(\s*)"                                             # Group 1: Indentation
-        r"(shared_page\..+?)"                                 # Group 2: The full locator
-        r"\.(click|fill|check|uncheck|press|hover|dblclick)"  # Group 3: The action
-        r"\((.*?)\)"                                          # Group 4: Arguments
-        r"(?:\s*#\s*(.*))?$"                                  # Group 5: Inline comment (used as description)
+    # Python Regex parses RAW playwright commands seamlessly without LLM
+    action_regex = re.compile(
+        r"^(\s*)"                                             
+        r"(page\..+?)"                                        
+        r"\.(click|fill|check|uncheck|press|hover|dblclick)"  
+        r"\((.*?)\)"                                          
+        r"(?:\s*#\s*(.*))?$"                                  
     )
 
     mfa_injected = False 
@@ -353,126 +338,96 @@ def process_docs_to_pytest(uat_content: str, annotated_code: str, output_pytest_
         if expected_count == 0:
             continue
             
-        print(f"   └── 📝 Pytest Function {i+1}/{len(sections)}: {sec['name']} (Expected Actions: {expected_count})")
+        print(f"   └── 📝 Pytest Function {i+1}/{len(sections)}: {sec['name']} (Procedurally wrapping {expected_count} actions)")
         func_name = re.sub(r'[^a-zA-Z0-9_]', '_', sec['name'].lower())
         
-        for attempt in range(3):
-            automation_agent = Agent(
-                role=agents_config['automation_agent']['role'], 
-                goal=agents_config['automation_agent']['goal'], 
-                backstory=agents_config['automation_agent']['backstory'], 
-                allow_delegation=False, 
-                llm=azure_llm
-            )
+        master_pytest += f"@pytest.mark.order({i+1})\n"
+        master_pytest += f"def test_{func_name}(shared_page: Page):\n"
+        
+        current_description = None
+        
+        for line in chunk_code.split('\n'):
+            line_stripped = line.strip()
             
-            task = Task(
-                description=(
-                    "You are an Expert SDET. Convert the provided Code Snippet into a SINGLE Pytest function.\n"
-                    f"1. Name the function exactly: `test_{func_name}(shared_page: Page):`\n"
-                    f"2. Add the Pytest ordering decorator directly above the function: `@pytest.mark.order({i+1})`\n"
-                    f"3. Generate EXACTLY {expected_count} standard Playwright actions using the `shared_page` fixture.\n"
-                    "4. Do NOT output boilerplate, imports, or teardown steps (`close()`).\n"
-                    "5. CRITICAL: For EVERY Playwright action, you MUST add an inline comment (`#`) containing the exact Test Case Description from the UAT document.\n\n"
-                    "SYNTAX EXAMPLES (DO EXACTLY THIS):\n"
-                    "  shared_page.goto('https://url.com') # Navigate to the dashboard\n"
-                    "  shared_page.locator('#btn').click() # Click the submit button\n"
-                    "  shared_page.get_by_role('textbox').fill('text') # Fill the search box\n\n"
-                    f"CONTEXT FROM PREVIOUS FUNCTION:\n{prev_context}\n\n"
-                    f"MASTER UAT DOCUMENT (For Reference):\n{uat_content}\n\n"
-                    f"CODE SNIPPET TO CONVERT:\n{chunk_code}"
-                ),
-                expected_output="A single python function block starting with `@pytest.mark.order`.",
-                agent=automation_agent
-            )
-            crew = Crew(agents=[automation_agent], tasks=[task], process=Process.sequential)
-            
-            try:
-                result = str(crew.kickoff()).strip()
-                raw_llm_code = result
-                if raw_llm_code.startswith("```python"): raw_llm_code = raw_llm_code[9:]
-                elif raw_llm_code.startswith("```"): raw_llm_code = raw_llm_code[3:]
-                if raw_llm_code.endswith("```"): raw_llm_code = raw_llm_code[:-3]
-                raw_llm_code = raw_llm_code.strip()
+            if not line_stripped: continue
                 
-                wrapped_lines = []
-                actual_action_count = 0
+            boilerplate = [
+                "def run(", "browser = playwright", "context = browser.new_context",
+                "page = context.new_page", "context.close()", "browser.close()",
+                "with sync_playwright", "run(playwright)", "page.close()"
+            ]
+            if any(line_stripped.startswith(b) for b in boilerplate):
+                continue
                 
-                for line in raw_llm_code.split('\n'):
-                    if "shared_page.goto(" in line:
-                        indent = len(line) - len(line.lstrip())
-                        indent_spaces = " " * indent
-                        
-                        url_match = re.search(r'goto\((.*?)\)', line)
-                        comment_match = re.search(r'#\s*(.*)', line)
-                        
-                        url = url_match.group(1) if url_match else "''"
-                        desc = comment_match.group(1).replace('\\', '\\\\').replace('"', '\\"') if comment_match else f"Navigate to {url}"
-                        
-                        wrapped_lines.append(f"{indent_spaces}safe_action(shared_page, shared_page, 'goto', \"{desc}\", {url})")
-                        
-                        if not mfa_injected:
-                            mfa_code = (
-                                f"{indent_spaces}print('''\n"
-                                f"{indent_spaces}================================================================================\n"
-                                f"{indent_spaces}  ACTION REQUIRED: MANUAL LOGIN & MFA\n"
-                                f"{indent_spaces}--------------------------------------------------------------------------------\n"
-                                f"{indent_spaces}  1. Log in manually. 2. Complete MFA. 3. Wait for dashboard to load.\n"
-                                f"{indent_spaces}  ---> PRESS [ENTER] IN THIS TERMINAL WHEN READY <---\n"
-                                f"{indent_spaces}================================================================================\n"
-                                f"{indent_spaces}''')\n"
-                                f"{indent_spaces}input()\n"
-                                f"{indent_spaces}print('\\n🚀 Starting automated actions...')\n"
-                            )
-                            wrapped_lines.append(mfa_code)
-                            mfa_injected = True
-                            
-                        actual_action_count += 1
-                        continue
+            if line_stripped.startswith("#"):
+                current_description = line_stripped.lstrip('# ')
+                master_pytest += f"    # {current_description}\n" 
+                continue
 
-                    match = procedural_regex.search(line)
-                    if match:
-                        indent_str, loc, act, args, comment = match.groups()
-                        clean_loc = loc.replace('shared_page.', 'shared_page.')
-                        
-                        # 🔴 FIX 1: Ensure double quotes and backslashes are ALWAYS escaped, even in fallbacks
-                        raw_desc = comment.strip() if comment else f"Perform {act} on {loc}"
-                        desc = raw_desc.replace('\\', '\\\\').replace('"', '\\"')
-                        
-                        # 🔴 FIX 2: Simplified args passing. Python natively handles *args and **kwargs perfectly if we just drop the string directly in!
-                        if args and args.strip():
-                            wrapped_lines.append(f"{indent_str}safe_action(shared_page, {clean_loc}, '{act}', \"{desc}\", {args.strip()})")
-                        else:
-                            wrapped_lines.append(f"{indent_str}safe_action(shared_page, {clean_loc}, '{act}', \"{desc}\")")
-                            
-                        actual_action_count += 1
-                    else:
-                        wrapped_lines.append(line)
+            orig_indent = len(line) - len(line.lstrip())
+            extra_indent = " " * max(0, orig_indent - 4)
+            full_indent = "    " + extra_indent
+
+            if "page.goto(" in line:
+                url_match = re.search(r'goto\((.*?)\)', line)
+                url = url_match.group(1) if url_match else "''"
+                desc = current_description.replace('\\', '\\\\').replace('"', '\\"') if current_description else f"Navigate to {url}"
                 
-                wrapped_code = "\n".join(wrapped_lines)
+                master_pytest += f"{full_indent}safe_action(shared_page, shared_page, 'goto', \"{desc}\", {url})\n"
                 
-                if actual_action_count >= expected_count:
-                    master_pytest += wrapped_code + "\n\n"
-                    prev_context = wrapped_code
-                    print(f"       ✅ Passed (Procedurally Wrapped). Waiting {API_DELAY}s for API Rate Limit...")
-                    time.sleep(API_DELAY)
-                    break
+                if not mfa_injected:
+                    mfa_code = (
+                        f"{full_indent}print('''\n"
+                        f"{full_indent}================================================================================\n"
+                        f"{full_indent}  ACTION REQUIRED: MANUAL LOGIN & MFA\n"
+                        f"{full_indent}--------------------------------------------------------------------------------\n"
+                        f"{full_indent}  1. Log in manually. 2. Complete MFA. 3. Wait for dashboard to load.\n"
+                        f"{full_indent}  ---> PRESS [ENTER] IN THIS TERMINAL WHEN READY <---\n"
+                        f"{full_indent}================================================================================\n"
+                        f"{full_indent}''')\n"
+                        f"{full_indent}input()\n"
+                        f"{full_indent}print('\\n🚀 Starting automated actions...')\n"
+                    )
+                    master_pytest += mfa_code
+                    mfa_injected = True
+                    
+                current_description = None
+                continue
+
+            match = action_regex.search(line)
+            if match:
+                _, loc, act, args, inline_comment = match.groups()
+                clean_loc = loc.replace('page.', 'shared_page.')
+                
+                if current_description: raw_desc = current_description
+                elif inline_comment: raw_desc = inline_comment.strip()
+                else: raw_desc = f"Perform {act} on {loc}"
+                    
+                desc = raw_desc.replace('\\', '\\\\').replace('"', '\\"')
+                
+                if args and args.strip():
+                    master_pytest += f"{full_indent}safe_action(shared_page, {clean_loc}, '{act}', \"{desc}\", {args.strip()})\n"
                 else:
-                    print(f"       ❌ Dropped lines ({actual_action_count}/{expected_count}). Retrying after {API_DELAY}s...")
-                    time.sleep(API_DELAY)
-            except Exception as e:
-                print(f"       ⚠️ API Error: {e}. Retrying after {API_DELAY}s...")
-                time.sleep(API_DELAY)
-                
+                    master_pytest += f"{full_indent}safe_action(shared_page, {clean_loc}, '{act}', \"{desc}\")\n"
+                    
+                current_description = None 
+            else:
+                modified_line = line_stripped.replace('page.', 'shared_page.').replace('page,', 'shared_page,')
+                master_pytest += f"{full_indent}{modified_line}\n"
+                current_description = None 
+
+        master_pytest += "\n"
+
     with open(output_pytest_path, 'w', encoding='utf-8') as f:
         f.write(master_pytest)
-    print(f"\n✅ Successfully generated final Pytest script: {output_pytest_path}")
+    print(f"\n✅ Successfully generated procedural Pytest script: {output_pytest_path}")
 
 
 import pandas as pd
 from openpyxl.styles import Font, Alignment, PatternFill
 
 # ====================================================================
-# PHASE 3: Generate UAT Excel Sheets (WITH 0 DATA LOSS CHECK)
+# PHASE 3: Generate UAT Excel Sheets
 # ====================================================================
 def run_step_3_generate_excel_uat(docs_dir: str, excel_dir: str):
     print("\n--- [PHASE 3] Converting Markdown to Advanced UAT Excel ---")
@@ -498,9 +453,7 @@ def run_step_3_generate_excel_uat(docs_dir: str, excel_dir: str):
         for line in lines:
             line = line.strip()
             
-            if line.startswith("```"):
-                continue
-                
+            if line.startswith("```"): continue
             if line.startswith("# Feature:"):
                 current_feature = line.replace("# Feature:", "").strip()
                 rows.append({
@@ -510,18 +463,21 @@ def run_step_3_generate_excel_uat(docs_dir: str, excel_dir: str):
                 })
                 continue
                 
-            if line.startswith("|") and "Use Case ID" in line:
-                continue 
-            if line.startswith("|") and ":---" in line:
-                continue 
+            if line.startswith("|") and "Use Case ID" in line: continue 
+            if line.startswith("|") and ":---" in line: continue 
                 
             if line.startswith("|"):
                 raw_table_row_count += 1
-                parts = [p.strip() for p in line.split("|")[1:-1]]
+                clean_line = line.strip('| \n')
+                parts = [p.strip() for p in clean_line.split("|")]
                 
-                if len(parts) >= 6:
-                    use_case = parts[0]
-                    desc = parts[1].replace("<br>", "\n").replace("<br/>", "\n")
+                if len(parts) >= 3:
+                    use_case = parts[0] if len(parts) > 0 else ""
+                    desc = parts[1].replace("<br>", "\n").replace("<br/>", "\n") if len(parts) > 1 else ""
+                    loc = parts[2] if len(parts) > 2 else ""
+                    pf = parts[3] if len(parts) > 3 else ""
+                    notes = parts[4] if len(parts) > 4 else ""
+                    issues = parts[5] if len(parts) > 5 else ""
                     
                     if desc.startswith("**---") and desc.endswith("---**"):
                         desc = desc.replace("**", "")
@@ -529,10 +485,10 @@ def run_step_3_generate_excel_uat(docs_dir: str, excel_dir: str):
                     rows.append({
                         "Use Case ID": use_case,
                         "Test Case Description": desc,
-                        "Exact Locator": parts[2],
-                        "Pass/Fail": parts[3],
-                        "Notes": parts[4],
-                        "Issues": parts[5]
+                        "Exact Locator": loc,
+                        "Pass/Fail": pf,
+                        "Notes": notes,
+                        "Issues": issues
                     })
 
         if rows:
@@ -594,7 +550,6 @@ def run_step_3_generate_excel_uat(docs_dir: str, excel_dir: str):
             
     print(f"\n--- Excel Conversion Complete! Created {processed_count} files. ---")
 
-
 # --- Execution Entry Point ---
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Orchestrate CrewAI generation via Semantic Chunking.")
@@ -614,11 +569,17 @@ if __name__ == "__main__":
     if args.files:
         available_files = os.listdir(annotated_logs_dir)
         scripts_to_process = [f for f in args.files if f in available_files]
+        missing_files = [f for f in args.files if f not in available_files]
+        if missing_files:
+            print(f"\n⚠️ WARNING: Could not find {missing_files} in {annotated_logs_dir}/.")
+            print(f"Did you run 'python generate_annotations.py --files {missing_files[0]}' first?\n")
+            sys.exit(1)
     else:
         scripts_to_process = [f for f in os.listdir(annotated_logs_dir) if f.endswith(".py")]
     
     if not scripts_to_process:
-        sys.exit("No annotated scripts found to process.")
+        print(f"❌ No annotated scripts found to process in {annotated_logs_dir}/.")
+        sys.exit(0)
 
     run_step_1 = args.step is None or args.step == 1
     run_step_2 = args.step is None or args.step == 2
@@ -631,15 +592,24 @@ if __name__ == "__main__":
         
         doc_output_path = os.path.join(output_docs_dir, f"{feature_name_derived}_UAT.md")
         pytest_output_path = os.path.join(output_pytest_dir, f"test_{script_name}")
+        chunks_cache_path = os.path.join(output_docs_dir, f"{feature_name_derived}_chunks.json")
         
         with open(script_path, 'r', encoding='utf-8') as f:
             annotated_code = f.read()
             
-        # 1. Plan the Semantic Chunks ONCE for both phases
-        sections = plan_semantic_sections(annotated_code)
-        if not sections:
-            print("Failed to chunk file. Skipping.")
-            continue
+        # 🧠 Smart Chunk Caching
+        if os.path.exists(chunks_cache_path):
+            print(f"🧠 Loading cached semantic chunks from {chunks_cache_path}...")
+            with open(chunks_cache_path, 'r', encoding='utf-8') as f:
+                sections = json.load(f)
+        else:
+            sections = plan_semantic_sections(annotated_code)
+            if not sections:
+                print("Failed to chunk file. Skipping.")
+                continue
+            with open(chunks_cache_path, 'w', encoding='utf-8') as f:
+                json.dump(sections, f, indent=4)
+            print(f"💾 Saved semantic chunks to cache: {chunks_cache_path}")
 
         # --- PHASE 1 (Docs) ---
         if run_step_1:
@@ -650,11 +620,8 @@ if __name__ == "__main__":
         
         # --- PHASE 2 (Pytest) ---
         if run_step_2:
-            if not os.path.exists(doc_output_path):
-                print(f"❌ Error: Required UAT document missing.")
-            else:
-                with open(doc_output_path, 'r', encoding='utf-8') as f: uat_content = f.read()
-                process_docs_to_pytest(uat_content, annotated_code, pytest_output_path, sections)
+            process_docs_to_pytest(annotated_code, pytest_output_path, sections)
                 
+        # --- PHASE 3 (Excel) ---
         if run_step_3:
             run_step_3_generate_excel_uat(output_docs_dir, output_excel_dir)

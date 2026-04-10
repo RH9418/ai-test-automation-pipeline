@@ -14,7 +14,7 @@ if not os.path.exists(SCREENSHOT_DIR):
 screenshot_counter = 0
 
 def capture_annotated_screenshot(page, locator, full_action_description: str):
-    """Highlights element with a thick red box and glow, then captures screenshot."""
+    '''Highlights element with a thick red box and glow, then captures screenshot.'''
     global screenshot_counter
     screenshot_counter += 1
     
@@ -78,15 +78,15 @@ def capture_annotated_screenshot(page, locator, full_action_description: str):
         print(f"   └── 📸 Screenshot saved: {path}")
         
         # 4. Clean up
-        page.evaluate("""() => {
+        page.evaluate('''() => {
             document.getElementById('ge-spotlight-box')?.remove();
             document.getElementById('ge-spotlight-label')?.remove();
-        }""")
+        }''')
     except Exception as e:
         print(f"   └── ⚠️ Screenshot Error: {e}")
 
-def safe_action(page, locator, action_name: str, description: str, *action_args):
-    """Performs action with spotlight screenshots and manual fallbacks."""
+def safe_action(page, locator, action_name: str, description: str, *action_args, **action_kwargs):
+    '''Performs action with spotlight screenshots and manual fallbacks.'''
     full_desc = f"{action_name.capitalize()}: {description}"
     if action_name == 'fill':
         full_desc += f" with '{action_args[0] if action_args else ''}'"
@@ -106,11 +106,18 @@ def safe_action(page, locator, action_name: str, description: str, *action_args)
                 time.sleep(0.3)
             except: pass
             
-        capture_annotated_screenshot(page, locator, full_desc)
-        
+        if action_name == 'close':
+            try: locator.close()
+            except: pass
+            print(f"✅ SUCCESS: {description} (Teardown handled by Pytest)")
+            return
+            
+        if locator != page:
+            capture_annotated_screenshot(page, locator, full_desc)
+            
         # Execution
         action_func = getattr(locator, action_name)
-        action_func(*action_args)
+        action_func(*action_args, **action_kwargs)
         print(f"✅ SUCCESS: {description}")
     except Exception as e:
         print(f"❌ ERROR: Failed {action_name} on '{description}'.")
@@ -131,63 +138,63 @@ def run(playwright: Playwright) -> None:
     page = context.new_page()
     safe_action(page, page, 'goto', 'Navigate to https://stage.mkr.esp.antuit.ai/nglcp/promotions/create-promotions', 'https://stage.mkr.esp.antuit.ai/nglcp/promotions/create-promotions')
 
-    print("""
+    print('''
 ================================================================================
   ACTION REQUIRED: MANUAL LOGIN & MFA
 --------------------------------------------------------------------------------
   1. Log in manually. 2. Complete MFA. 3. Wait for dashboard to load.
   ---> PRESS [ENTER] IN THIS TERMINAL WHEN READY <---
 ================================================================================
-""")
+''')
     input()
     print("\n🚀 Starting automated actions...")
     safe_action(page, page.get_by_test_id("promotionEventName"), 'click', "get_by_test_id(\"promotionEventName\")", )
-    safe_action(page, page.get_by_test_id("promotionEventName"), 'fill', "get_by_test_id(\"promotionEventName\")", "1210--0904")
+    safe_action(page, page.get_by_test_id("promotionEventName"), 'fill', "get_by_test_id(\"promotionEventName\")", "rh--1220--0904")
     safe_action(page, page.get_by_test_id("promotionEventDescription"), 'click', "get_by_test_id(\"promotionEventDescription\")", )
     safe_action(page, page.get_by_test_id("promotionEventDescription"), 'fill', "get_by_test_id(\"promotionEventDescription\")", "PROMO THRESHOLD")
     safe_action(page, page.get_by_test_id("startDate"), 'click', "get_by_test_id(\"startDate\")", )
-    safe_action(page, page.get_by_text("11", exact=True), 'click', "get_by_text(\"11\", exact=True)", )
+    safe_action(page, page.get_by_text("10", exact=True), 'click', "get_by_text(\"10\", exact=True)", )
     safe_action(page, page.get_by_test_id("endDate"), 'click', "get_by_test_id(\"endDate\")", )
-    safe_action(page, page.get_by_text("13"), 'click', "get_by_text(\"13\")", )
+    safe_action(page, page.get_by_text("17"), 'click', "get_by_text(\"17\")", )
     safe_action(page, page.get_by_test_id("isAsapPricing"), 'click', "get_by_test_id(\"isAsapPricing\")", )
-    safe_action(page, page.get_by_role("textbox", name="Select Locations"), 'click', "get_by_role(\"textbox\", name=\"Select Locations\")", )
+    safe_action(page, page.locator(".zeb-tiers").first, 'click', "locator(\".zeb-tiers\").first", )
     safe_action(page, page.locator("#SideFilterlocationhierarchyId").get_by_text("Hierarchy"), 'click', "locator(\"#SideFilterlocationhierarchyId\").get_by_text(\"Hierarchy\")", )
     safe_action(page, page.get_by_text("Region", exact=True), 'click', "get_by_text(\"Region\", exact=True)", )
     safe_action(page, page.get_by_role("radio", name="NA", exact=True), 'check', "get_by_role(\"radio\", name=\"NA\", exact=True)", )
     safe_action(page, page.get_by_text("Price Zone Type"), 'click', "get_by_text(\"Price Zone Type\")", )
-    safe_action(page, page.locator(".filter-values.d-flex.align-items-center.p-l-32.p-r-24 > .custom-checkbox-wrapper > .pointer").first, 'click', "locator(\".filter-values.d-flex.align-items-center.p-l-32.p-r-24 > .custom-checkbox-wrapper > .pointer\").first", )
+    safe_action(page, page.locator("div").filter(has_text=re.compile(r"^Collection$")), 'click', "locator(\"div\").filter(has_text=re.compile(r\"^Collection$\"))", )
     safe_action(page, page.get_by_text("Price Zone", exact=True), 'click', "get_by_text(\"Price Zone\", exact=True)", )
-    safe_action(page, page.locator(".filter-values.d-flex.align-items-center.p-l-32.p-r-24 > .custom-checkbox-wrapper > .pointer"), 'click', "locator(\".filter-values.d-flex.align-items-center.p-l-32.p-r-24 > .custom-checkbox-wrapper > .pointer\")", )
+    safe_action(page, page.get_by_text("1_US Collection"), 'click', "get_by_text(\"1_US Collection\")", )
     safe_action(page, page.get_by_role("button", name="Apply Filters"), 'click', "get_by_role(\"button\", name=\"Apply Filters\")", )
-    safe_action(page, page.locator("#optimizationObjective > .multiselect-dropdown > div > .w-100"), 'click', "locator(\"#optimizationObjective > .multiselect-dropdown > div > .w-100\")", )
-    safe_action(page, page.locator("div").filter(has_text=re.compile(r"^Optimize Sales Revenue$")).nth(1), 'click', "locator(\"div\").filter(has_text=re.compile(r\"^Optimize Sales Revenue$\")).nth(1)", )
-    safe_action(page, page.locator("div:nth-child(8) > .zeb-tiers"), 'click', "locator(\"div:nth-child(8) > .zeb-tiers\")", )
+    safe_action(page, page.get_by_role("textbox", name="Select Products"), 'click', "get_by_role(\"textbox\", name=\"Select Products\")", )
     safe_action(page, page.locator("#SideFilterproducthierarchyId").get_by_text("Hierarchy"), 'click', "locator(\"#SideFilterproducthierarchyId\").get_by_text(\"Hierarchy\")", )
     safe_action(page, page.get_by_text("Style Color"), 'click', "get_by_text(\"Style Color\")", )
-    safe_action(page, page.locator("#SideFilterproducthierarchyId div").filter(has_text=re.compile(r"^Select All$")), 'click', "locator(\"#SideFilterproducthierarchyId div\").filter(has_text=re.compile(r\"^Select All$\"))", )
+    safe_action(page, page.locator("div:nth-child(5) > esp-filter-sub-accordion-v1 > .sub-accordion-element > .fiter-values-container > .filter-options > .filter-values-options > .filter-values.d-flex.align-items-center.p-l-32.p-r-12 > .custom-checkbox-wrapper"), 'click', "locator(\"div:nth-child(5) > esp-filter-sub-accordion-v1 > .sub-accordion-element > .fiter-values-container > .filter-options > .filter-values-options > .filter-values.d-flex.align-items-center.p-l-32.p-r-12 > .custom-checkbox-wrapper\")", )
     safe_action(page, page.locator("div:nth-child(5) > esp-filter-sub-accordion-v1 > .sub-accordion-element > .fiter-values-container > .filter-options > .filter-values-options > div:nth-child(2) > .custom-checkbox-wrapper > .pointer"), 'click', "locator(\"div:nth-child(5) > esp-filter-sub-accordion-v1 > .sub-accordion-element > .fiter-values-container > .filter-options > .filter-values-options > div:nth-child(2) > .custom-checkbox-wrapper > .pointer\")", )
-    safe_action(page, page.get_by_text("004CKI023A503"), 'click', "get_by_text(\"004CKI023A503\")", )
-    safe_action(page, page.get_by_text("004AKH003490"), 'click', "get_by_text(\"004AKH003490\")", )
-    safe_action(page, page.get_by_text("005DKI004106"), 'click', "get_by_text(\"005DKI004106\")", )
-    safe_action(page, page.get_by_text("022DKI005106"), 'click', "get_by_text(\"022DKI005106\")", )
+    safe_action(page, page.locator(".pointer.custom-checkbox-unchecked").first, 'click', "locator(\".pointer.custom-checkbox-unchecked\").first", )
     safe_action(page, page.get_by_role("button", name="Apply Filters"), 'click', "get_by_role(\"button\", name=\"Apply Filters\")", )
+    safe_action(page, page.locator("#optimizationObjective > .multiselect-dropdown > div > .w-100"), 'click', "locator(\"#optimizationObjective > .multiselect-dropdown > div > .w-100\")", )
+    safe_action(page, page.locator("div").filter(has_text=re.compile(r"^Optimize for Sales Unit$")).nth(1), 'click', "locator(\"div\").filter(has_text=re.compile(r\"^Optimize for Sales Unit$\")).nth(1)", )
     safe_action(page, page.get_by_test_id("create-promotions-next-button"), 'click', "get_by_test_id(\"create-promotions-next-button\")", )
     safe_action(page, page.get_by_text("Available Products"), 'click', "get_by_text(\"Available Products\")", )
+    safe_action(page, page.get_by_text("Show More"), 'click', "get_by_text(\"Show More\")", )
     safe_action(page, page.get_by_test_id("create-promotions-next-button"), 'click', "get_by_test_id(\"create-promotions-next-button\")", )
-    safe_action(page, page.locator(".dropdown-caret").first, 'click', "locator(\".dropdown-caret\").first", )
+    safe_action(page, page.locator(".w-100.p-h-16").first, 'click', "locator(\".w-100.p-h-16\").first", )
+    safe_action(page, page.get_by_text("Bundle"), 'click', "get_by_text(\"Bundle\")", )
     safe_action(page, page.get_by_text("Threshold"), 'click', "get_by_text(\"Threshold\")", )
-    safe_action(page, page.locator(".row").first, 'click', "locator(\".row\").first", )
+    safe_action(page, page.locator(".d-flex.flex-column.justify-content-center.font-size-10.align-items-center.checkbox-v2.m-r-10.zeb-check").first, 'click', "locator(\".d-flex.flex-column.justify-content-center.font-size-10.align-items-center.checkbox-v2.m-r-10.zeb-check\").first", )
+    safe_action(page, page.get_by_text("What type of promotion(s) would you like to compare? *Max limit 5Promo Type"), 'click', "get_by_text(\"What type of promotion(s) would you like to compare? *Max limit 5Promo Type\")", )
     safe_action(page, page.get_by_test_id("spend_amount"), 'click', "get_by_test_id(\"spend_amount\")", )
-    safe_action(page, page.get_by_test_id("spend_amount"), 'fill', "get_by_test_id(\"spend_amount\")", "2000")
+    safe_action(page, page.get_by_test_id("spend_amount"), 'fill', "get_by_test_id(\"spend_amount\")", "5000")
     safe_action(page, page.locator("#get"), 'click', "locator(\"#get\")", )
     safe_action(page, page.locator("#get"), 'fill', "locator(\"#get\")", "25")
     safe_action(page, page.get_by_test_id("create-promotions-next-button"), 'click', "get_by_test_id(\"create-promotions-next-button\")", )
-    safe_action(page, page.get_by_test_id("replicate"), 'click', "get_by_test_id(\"replicate\")", )
+    safe_action(page, page.get_by_text("Price Zone Adjustment"), 'click', "get_by_text(\"Price Zone Adjustment\")", )
     safe_action(page, page.get_by_test_id("replicate-apply"), 'click', "get_by_test_id(\"replicate-apply\")", )
     page.goto("https://stage.mkr.esp.antuit.ai/nglcp/product-level-details/product-details")
-    safe_action(page, page.get_by_role("button", name="Submit All for Approval"), 'click', "get_by_role(\"button\", name=\"Submit All for Approval\")", )
-    safe_action(page, page.get_by_test_id("confirm-modal-confirm-yes-button"), 'click', "get_by_test_id(\"confirm-modal-confirm-yes-button\")", )
     safe_action(page, page.get_by_role("button", name="Close"), 'click', "get_by_role(\"button\", name=\"Close\")", )
+    safe_action(page, page.get_by_test_id("submit-all-for-approval"), 'click', "get_by_test_id(\"submit-all-for-approval\")", )
+    safe_action(page, page.get_by_test_id("confirm-modal-confirm-yes-button"), 'click', "get_by_test_id(\"confirm-modal-confirm-yes-button\")", )
     safe_action(page, page.get_by_role("button", name="Actions"), 'click', "get_by_role(\"button\", name=\"Actions\")", )
     safe_action(page, page.get_by_text("Approve", exact=True), 'click', "get_by_text(\"Approve\", exact=True)", )
     safe_action(page, page.get_by_test_id("confirm-modal-confirm-yes-button"), 'click', "get_by_test_id(\"confirm-modal-confirm-yes-button\")", )
