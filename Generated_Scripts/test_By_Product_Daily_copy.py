@@ -24,7 +24,6 @@ def capture_annotated_screenshot(page: Page, locator, full_action_description: s
     path = os.path.join(SCREENSHOT_DIR, filename)
 
     try:
-        # Fast timeouts so we don't freeze if a menu closes
         locator.scroll_into_view_if_needed(timeout=1000)
         locator.wait_for(state='visible', timeout=1000)
         
@@ -94,8 +93,7 @@ def safe_download(page: Page, timeout_ms=300000): # 5 minutes default timeout
 def safe_action(page: Page, locator, action_name: str, description: str, *action_args, **action_kwargs):
     '''Performs action with spotlight screenshots and manual fallbacks.'''
     full_desc = f"{action_name.capitalize()}: {description}"
-    if action_name == 'fill': full_desc += f" with '{action_args[0] if action_args else ''}'"
-        
+    
     try:
         if action_name == 'fill':
             print(f"\n⏸️ PAUSING FOR INPUT: About to fill '{description}'.")
@@ -111,10 +109,11 @@ def safe_action(page: Page, locator, action_name: str, description: str, *action
 
         if locator != page:
             capture_annotated_screenshot(page, locator, full_desc)
-            
-        action_func = getattr(locator, action_name)
-        action_func(*action_args, **action_kwargs)
-        
+            action_func = getattr(locator, action_name)
+            action_func(*action_args, **action_kwargs)
+        else:
+            if action_name == 'goto': page.goto(*action_args, **action_kwargs)
+                
         print(f"✅ SUCCESS: {description}")
     except Exception as e:
         print(f"❌ ERROR: Failed {action_name} on '{description}'.")
@@ -200,7 +199,7 @@ def test_column_selection_and_deselection(shared_page: Page):
     safe_action(shared_page, shared_page.get_by_role("treeitem", name="System Forecast Base (Plan").get_by_label("Press SPACE to toggle"), 'uncheck', "Uncheck the checkbox for 'System Forecast Base (Plan' again to ensure it is deselected.")
 
 @pytest.mark.order(6)
-def test_specific_column_selection(shared_page: Page):
+def test_additional_column_selection(shared_page: Page):
     # Click on the 'System Forecast Promotion (' label to select this column.
     safe_action(shared_page, shared_page.get_by_label("System Forecast Promotion (").get_by_text("System Forecast Promotion ("), 'click', "Click on the 'System Forecast Promotion (' label to select this column.")
     # Click on the 'System Forecast Total (Plan+1' label to select this column.
@@ -331,7 +330,7 @@ def test_column_selection_and_visibility_management(shared_page: Page):
     safe_action(shared_page, shared_page.locator("div:nth-child(15) > .ag-column-select-column"), 'uncheck', "Uncheck the visibility toggle for the column in the 15th position to hide it.")
 
 @pytest.mark.order(15)
-def test_final_visibility_toggle(shared_page: Page):
+def test_final_column_visibility_toggle(shared_page: Page):
     # Uncheck the visibility toggle for the checkbox controlling column visibility to hide all columns.
     safe_action(shared_page, shared_page.get_by_role("checkbox", name="Press SPACE to toggle visibility (visible)"), 'uncheck', "Uncheck the visibility toggle for the checkbox controlling column visibility to hide all columns.")
     # Check the 'Toggle All Columns Visibility' checkbox to make all columns visible.
@@ -438,22 +437,19 @@ def test_row_context_menu_and_selection_confirmation(shared_page: Page):
     safe_action(shared_page, shared_page.locator("esp-row-dimentional-grid").get_by_text("ARNOLD-BRWNBRY-OROWT"), 'click', "Click on the row containing 'ARNOLD-BRWNBRY-OROWT' to select it.")
     # Click on the row containing 'ARNOLD-BRWNBRY-OROWT' again, possibly to confirm or toggle the selection.
     safe_action(shared_page, shared_page.locator("esp-row-dimentional-grid").get_by_text("ARNOLD-BRWNBRY-OROWT"), 'click', "Click on the row containing 'ARNOLD-BRWNBRY-OROWT' again, possibly to confirm or toggle the selection.")
-
-@pytest.mark.order(24)
-def test_additional_row_selection(shared_page: Page):
     # Click on the span element containing the text 'ARTESANO' to select the corresponding row.
     safe_action(shared_page, shared_page.locator("span").filter(has_text=re.compile(r"^ARTESANO$")), 'click', "Click on the span element containing the text 'ARTESANO' to select the corresponding row.")
     # Click on the text 'ARTESANO' to confirm or highlight the selection.
     safe_action(shared_page, shared_page.get_by_text("ARTESANO"), 'click', "Click on the text 'ARTESANO' to confirm or highlight the selection.")
 
-@pytest.mark.order(25)
+@pytest.mark.order(24)
 def test_row_selection_and_interaction(shared_page: Page):
     # Check the checkbox for the row containing 'ARTESANO' to toggle its selection.
     safe_action(shared_page, shared_page.get_by_role("gridcell", name="Press Space to toggle row selection (unchecked)  ARTESANO").get_by_label("Press Space to toggle row"), 'check', "Check the checkbox for the row containing 'ARTESANO' to toggle its selection.")
     # Double-click on the checkbox within the row to perform an additional action, possibly to confirm selection.
     safe_action(shared_page, shared_page.locator(".ag-cell-value.ag-cell.ag-cell-not-inline-editing.ag-cell-normal-height.ag-cell-last-left-pinned.ag-column-first.no-border.ag-cell-focus > .ag-cell-wrapper > .ag-group-checkbox"), 'dblclick', "Double-click on the checkbox within the row to perform an additional action, possibly to confirm selection.")
 
-@pytest.mark.order(26)
+@pytest.mark.order(25)
 def test_column_header_interaction_and_sorting(shared_page: Page):
     # Click on the text 'System Forecast Total (Plan' to interact with the column header or data.
     safe_action(shared_page, shared_page.get_by_text("System Forecast Total (Plan").nth(3), 'click', "Click on the text 'System Forecast Total (Plan' to interact with the column header or data.")
@@ -464,14 +460,17 @@ def test_column_header_interaction_and_sorting(shared_page: Page):
     # Click on the header icon to interact with the column, possibly to open a menu or perform an action.
     safe_action(shared_page, shared_page.locator(".ag-header-cell.ag-header-parent-hidden.ag-header-cell-sortable.ag-header-background.ag-focus-managed.ag-header-active > .ag-header-cell-comp-wrapper > .ag-cell-label-container > .ag-header-icon > .ag-icon"), 'click', "Click on the header icon to interact with the column, possibly to open a menu or perform an action.")
 
-@pytest.mark.order(27)
-def test_filter_options_interaction(shared_page: Page):
+@pytest.mark.order(26)
+def test_filter_menu_interaction(shared_page: Page):
     # Click on the filter body wrapper to open the filter options.
     safe_action(shared_page, shared_page.locator(".ag-filter-body-wrapper"), 'click', "Click on the filter body wrapper to open the filter options.")
     # Click on the combobox labeled 'Filtering operator' to open the dropdown menu.
     safe_action(shared_page, shared_page.get_by_role("combobox", name="Filtering operator"), 'click', "Click on the combobox labeled 'Filtering operator' to open the dropdown menu.")
     # Select the 'Equals' option from the dropdown menu.
     safe_action(shared_page, shared_page.get_by_role("option", name="Equals"), 'click', "Select the 'Equals' option from the dropdown menu.")
+
+@pytest.mark.order(27)
+def test_filter_option_selection(shared_page: Page):
     # Click on the text 'Equals' to confirm the selection.
     safe_action(shared_page, shared_page.get_by_text("Equals"), 'click', "Click on the text 'Equals' to confirm the selection.")
     # Select the 'Does not equal' option from the dropdown menu.
@@ -496,13 +495,13 @@ def test_filter_options_interaction(shared_page: Page):
     safe_action(shared_page, shared_page.get_by_text("Between"), 'click', "Click on the text 'Between' to confirm the selection.")
     # Select the 'Blank' option from the dropdown menu.
     safe_action(shared_page, shared_page.get_by_role("option", name="Blank", exact=True), 'click', "Select the 'Blank' option from the dropdown menu.")
+
+@pytest.mark.order(28)
+def test_logical_operator_and_filter_value_input(shared_page: Page):
     # Click on the text 'AND' to set the logical operator for the filter.
     safe_action(shared_page, shared_page.get_by_text("AND", exact=True), 'click', "Click on the text 'AND' to set the logical operator for the filter.")
     # Click on the text 'OR' to set the logical operator for the filter.
     safe_action(shared_page, shared_page.get_by_text("OR", exact=True), 'click', "Click on the text 'OR' to set the logical operator for the filter.")
-
-@pytest.mark.order(28)
-def test_filter_value_input_and_application(shared_page: Page):
     # Click on the spinbutton labeled 'Filter Value' to activate the input field.
     safe_action(shared_page, shared_page.get_by_role("spinbutton", name="Filter Value"), 'click', "Click on the spinbutton labeled 'Filter Value' to activate the input field.")
     # Fill the spinbutton labeled 'Filter Value' with the value '1'.
@@ -513,7 +512,7 @@ def test_filter_value_input_and_application(shared_page: Page):
     safe_action(shared_page, shared_page.get_by_role("button", name="Apply"), 'click', "Click on the 'Apply' button to apply the filter settings.")
 
 @pytest.mark.order(29)
-def test_filter_clearing_and_final_interaction(shared_page: Page):
+def test_filter_application_and_clearing(shared_page: Page):
     # Click on the header cell to interact with the column, possibly to open a menu or perform an action.
     safe_action(shared_page, shared_page.locator(".ag-header-cell.ag-header-parent-hidden.ag-header-cell-sortable.ag-header-background.ag-focus-managed.ag-header-cell-filtered > .ag-header-cell-comp-wrapper > .ag-cell-label-container"), 'click', "Click on the header cell to interact with the column, possibly to open a menu or perform an action.")
     # Click on the filter button in the column header to activate the filter options.
@@ -522,7 +521,7 @@ def test_filter_clearing_and_final_interaction(shared_page: Page):
     safe_action(shared_page, shared_page.get_by_role("button", name="Clear"), 'click', "Click on the 'Clear' button to remove any existing filters.")
 
 @pytest.mark.order(30)
-def test_reset_and_configure_column_visibility_part_1(shared_page: Page):
+def test_reset_and_column_visibility_configuration_part_1(shared_page: Page):
     # Click on the 'Reset' button to reset the filter settings to their default state.
     safe_action(shared_page, shared_page.get_by_role("button", name="Reset"), 'click', "Click on the 'Reset' button to reset the filter settings to their default state.")
     # Click on the button within the 'Products columns (0)' card to open the column visibility configuration.
@@ -548,7 +547,7 @@ def test_reset_and_configure_column_visibility_part_1(shared_page: Page):
     # Click on the label for the '6 Week Gross Units Average' column to interact with or highlight it.
 
 @pytest.mark.order(31)
-def test_reset_and_configure_column_visibility_part_2(shared_page: Page):
+def test_reset_and_column_visibility_configuration_part_2(shared_page: Page):
     safe_action(shared_page, shared_page.get_by_label("6 Week Gross Units Average").get_by_text("Week Gross Units Average"), 'click', "Perform click on page.get_by_label(\"6 Week Gross Units Average\").get_by_text(\"Week Gross Units Average\")")
     # Click on the label for the 'LY 6 Week Aged Net Units' column to interact with or highlight it.
     safe_action(shared_page, shared_page.get_by_label("LY 6 Week Aged Net Units").get_by_text("LY 6 Week Aged Net Units"), 'click', "Click on the label for the 'LY 6 Week Aged Net Units' column to interact with or highlight it.")
@@ -572,7 +571,7 @@ def test_reset_and_configure_column_visibility_part_2(shared_page: Page):
     safe_action(shared_page, shared_page.locator("esp-card-component").filter(has_text="Products columns (0)").get_by_role("button"), 'click', "Click on the button within the 'Products columns (0)' card again, possibly to close the column visibility configuration.")
 
 @pytest.mark.order(32)
-def test_export_data(shared_page: Page):
+def test_file_export_process(shared_page: Page):
     # Set up an expectation for a file download to occur during the subsequent action.
     with safe_download(shared_page) as download2_info:
     # Click on the export icon to initiate the export process.
@@ -581,7 +580,7 @@ def test_export_data(shared_page: Page):
     download2 = download2_info.value
 
 @pytest.mark.order(33)
-def test_manage_preferences(shared_page: Page):
+def test_preference_management(shared_page: Page):
     # Click on the informational message that notifies the user about the export limit.
     safe_action(shared_page, shared_page.get_by_text("Please note that a maximum of"), 'click', "Click on the informational message that notifies the user about the export limit.")
     # Click on the preference dropdown menu to open the options for managing preferences.
@@ -677,7 +676,7 @@ def test_measure_selection___user_suggested_and_override(shared_page: Page):
     safe_action(shared_page, shared_page.get_by_text("User Override Base").nth(1), 'click', "Click on the second instance of 'User Override Base' to select this measure.")
 
 @pytest.mark.order(39)
-def test_checkbox_interaction___initial_toggles(shared_page: Page):
+def test_checkbox_interaction___initial_toggling(shared_page: Page):
     # Click on the first checkbox to select or toggle it.
     safe_action(shared_page, shared_page.locator(".d-flex.flex-column.justify-content-center.font-size-10.align-items-center.checkbox-v2.m-r-10.zeb-check").first, 'click', "Click on the first checkbox to select or toggle it.")
     # Click on the first checkbox again, possibly to toggle or confirm the selection.
@@ -697,21 +696,21 @@ def test_measure_selection___ion_suggested_and_gross_units(shared_page: Page):
     safe_action(shared_page, shared_page.get_by_text("Aged Net Units (CW-3)").nth(1), 'click', "Click on the second instance of 'Aged Net Units (CW-3)' to select this measure.")
 
 @pytest.mark.order(41)
-def test_dropdown_interaction___deselect_and_modify(shared_page: Page):
+def test_dropdown_interaction___deselect_or_modify(shared_page: Page):
     # Click on the first selected dropdown option to deselect or modify the selection.
     safe_action(shared_page, shared_page.locator(".d-flex.dropdown-option.align-items-center.p-v-5.p-l-32.p-r-16.selected").first, 'click', "Click on the first selected dropdown option to deselect or modify the selection.")
     # Click on the first selected dropdown option again, possibly to confirm the deselection or modification.
     safe_action(shared_page, shared_page.locator(".d-flex.dropdown-option.align-items-center.p-v-5.p-l-32.p-r-16.selected").first, 'click', "Click on the first selected dropdown option again, possibly to confirm the deselection or modification.")
 
 @pytest.mark.order(42)
-def test_checkbox_interaction___additional_toggles(shared_page: Page):
+def test_checkbox_interaction___additional_toggling(shared_page: Page):
     # Click on the first checkbox to select or toggle it again.
     safe_action(shared_page, shared_page.locator(".d-flex.flex-column.justify-content-center.font-size-10.align-items-center.checkbox-v2.m-r-10.zeb-check").first, 'click', "Click on the first checkbox to select or toggle it again.")
     # Click on the first checkbox again, possibly to toggle or confirm the selection.
     safe_action(shared_page, shared_page.locator(".d-flex.flex-column.justify-content-center.font-size-10.align-items-center.checkbox-v2.m-r-10.zeb-check").first, 'click', "Click on the first checkbox again, possibly to toggle or confirm the selection.")
 
 @pytest.mark.order(43)
-def test_measure_selection___aged_net_units_and_scan_units(shared_page: Page):
+def test_measure_selection___aged_net_and_scan_units(shared_page: Page):
     # Click on 'Aged Net Units (CW-6)' to select this measure.
     safe_action(shared_page, shared_page.get_by_text("Aged Net Units (CW-6)", exact=True), 'click', "Click on 'Aged Net Units (CW-6)' to select this measure.")
     # Click on the first selected dropdown option to deselect or modify the selection.
@@ -939,7 +938,7 @@ def test_preference_management_actions(shared_page: Page):
     safe_action(shared_page, shared_page.get_by_text("Reset Preference"), 'click', "Click on 'Reset Preference' to reset the preferences to their default state.")
 
 @pytest.mark.order(63)
-def test_table_element_interactions(shared_page: Page):
+def test_table_interaction_actions(shared_page: Page):
     # Click on the element identified by 'path:nth-child(81)', possibly to interact with a specific UI component. The exact purpose is unclear from the locator.
     safe_action(shared_page, shared_page.locator("path:nth-child(81)"), 'click', "Click on the element identified by 'path:nth-child(81)', possibly to interact with a specific UI component. The exact purpose is unclear from the locator.")
     # Click on the 'User Override Base' text to select or highlight this option in the table.

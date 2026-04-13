@@ -1,0 +1,80 @@
+Execution Report for: BBU_Export
+================================================================================
+
+Total Successful Automated Actions: 70
+Total Failed (Manual Intervention) Actions: 0
+
+--- ❌ FAILED ACTIONS (Required Human Intervention) ---
+None! 100% of actions succeeded automatically.
+
+--- ✅ SUCCESSFUL ACTIONS ---
+- Goto: Navigate to https://stage.bbu.esp.antuit.ai/dp/demand-planning/executive-dashboard?workbookId=4&tabIndex=7
+- Click: get_by_text("FilterStart Week 01/25/2026")
+- Click: get_by_text("Filter")
+- Click: get_by_text("Start Week / End Week")
+- Click: locator("#Datepick")
+- Click: locator("div").filter(has_text="‹ January 2026 ›").nth(4)
+- Click: get_by_text("4").first
+- Click: get_by_role("button", name="January")
+- Click: get_by_text("February").first
+- Click: get_by_role("button", name="2026").first
+- Click: get_by_role("gridcell", name="2025")
+- Click: get_by_role("button", name="2026")
+- Click: get_by_role("gridcell", name="2024")
+- Click: get_by_role("gridcell", name="January").nth(1)
+- Click: get_by_text("2", exact=True).nth(2)
+- Click: get_by_text("Start Week 01/25/2026 End")
+- Click: get_by_text("Total ByProduct Level None")
+- Click: get_by_text("Total By")
+- Click: get_by_text("Product Level None Location")
+- Click: get_by_text("Product Level")
+- Click: get_by_text("None").first
+- Click: get_by_text("Select All")
+- Click: locator(".d-flex.flex-column.justify-content-center").first
+- Click: get_by_text("Brand Level 4")
+- Click: get_by_text("Brand Level 3")
+- Click: get_by_text("Brand Level 2")
+- Click: locator(".overflow-auto > div:nth-child(3)")
+- Click: get_by_text("UPC")
+- Click: get_by_text("Product Level 4")
+- Click: get_by_text("Product Level 3")
+- Click: get_by_text("Product Level 2")
+- Click: get_by_text("Location Level")
+- Click: get_by_text("None").first
+- Click: get_by_text("Select All")
+- Click: get_by_text("Sales Level 6")
+- Click: get_by_text("Sales Level 5", exact=True)
+- Click: get_by_text("Sales Level 4", exact=True)
+- Click: locator("div:nth-child(8)")
+- Click: get_by_text("Sales Level 1", exact=True)
+- Click: locator(".overflow-auto > div:nth-child(5)")
+- Click: locator("div:nth-child(7)")
+- Click: get_by_text("Depot", exact=True)
+- Click: get_by_text("Sales Level 3", exact=True)
+- Click: get_by_text("BUSS Environment", exact=True)
+- Click: locator("span").filter(has_text="BUSS Route ID")
+- Click: locator("div:nth-child(2) > esp-multiselect-dropdown > .multiselect-dropdown > div > .w-100")
+- Click: get_by_text("Customer Level")
+- Click: locator("div:nth-child(3) > esp-multiselect-dropdown > .multiselect-dropdown > div > .w-100")
+- Click: get_by_text("Select All")
+- Click: get_by_text("All").nth(3)
+- Click: get_by_text("Time")
+- Click: get_by_text("None").nth(1)
+- Click: locator("div").filter(has_text=re.compile(r"^Weekly$")).nth(3)
+- Click: get_by_text("Measures", exact=True)
+- Click: locator(".measure-filter-list")
+- Click: get_by_text("Measure", exact=True)
+- Click: get_by_text("All Measures").first
+- Click: get_by_text("Select All Measures")
+- Click: get_by_text("Select All Measures")
+- Click: get_by_text("User Forecast Total")
+- Click: locator(".d-flex.dropdown-option.align-items-center.p-v-5.p-l-32").first
+- Click: get_by_text("User Forecast Base")
+- Click: locator(".overflow-auto > div:nth-child(3)")
+- Click: locator(".overflow-auto > div:nth-child(5)")
+- Click: get_by_text("Select All Measures")
+- Click: get_by_text("Measure", exact=True)
+- Click: get_by_role("button", name="Download")
+- Click: get_by_text("Please note that a maximum of")
+- Click: get_by_role("button", name="Reset")
+- Click: get_by_role("button", name="Reset")

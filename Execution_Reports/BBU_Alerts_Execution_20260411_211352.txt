@@ -1,0 +1,140 @@
+Execution Report for: BBU_Alerts
+================================================================================
+
+Total Successful Automated Actions: 125
+Total Failed (Manual Intervention) Actions: 6
+
+--- ❌ FAILED ACTIONS (Required Human Intervention) ---
+- Click: get_by_text("WALMART 0906 SC B-0006805-01-")
+- Uncheck: get_by_role("checkbox", name="Press SPACE to toggle visibility (visible)")
+- Click: locator(".ag-header-icon.ag-header-cell-filter-button.ag-filter-active > .ag-icon")
+- Click: get_by_role("gridcell").filter(has_text=re.compile(r"^$")).first
+- Click: get_by_role("gridcell").filter(has_text=re.compile(r"^$")).first
+- Uncheck: get_by_role("checkbox", name="Press SPACE to toggle visibility (visible)")
+
+--- ✅ SUCCESSFUL ACTIONS ---
+- Goto: Navigate to https://stage.bbu.esp.antuit.ai/dp/demand-planning/executive-dashboard?workbookId=4&tabIndex=1
+- Click: get_by_text("Filter")
+- Click: locator("#alerts-filterId").get_by_text("Alerts")
+- Click: locator(".dropdown-caret").first
+- Click: locator("div").filter(has_text=re.compile(r"^Over Bias$")).nth(1)
+- Click: locator(".dropdown-caret").first
+- Click: locator("div").filter(has_text=re.compile(r"^Under Bias$")).nth(1)
+- Click: locator(".dropdown-caret").first
+- Click: locator("div").filter(has_text=re.compile(r"^MAPE$")).nth(1)
+- Click: locator(".dropdown-caret").first
+- Click: locator("div").filter(has_text=re.compile(r"^Stability$")).nth(1)
+- Click: locator(".dropdown-caret").first
+- Click: locator("div").filter(has_text=re.compile(r"^FVA$")).nth(1)
+- Click: get_by_role("button", name="columns")
+- Check: get_by_role("checkbox", name="Toggle All Columns Visibility")
+- Uncheck: get_by_role("treeitem", name="6W-Actuals Column").get_by_label("Press SPACE to toggle visibility (visible)")
+- Uncheck: get_by_role("treeitem", name="User Bias Column").get_by_label("Press SPACE to toggle visibility (visible)")
+- Click: locator(".pointer.zeb-adjustments")
+- Click: get_by_text("Save Preference")
+- Click: locator(".icon-color-toolbar-active.zeb-download-underline")
+- Download action completed
+- Click: locator(".pointer.zeb-adjustments")
+- Click: get_by_text("Reset Preference")
+- Click: locator(".ag-icon.ag-icon-filter").first
+- Fill: get_by_role("textbox", name="Filter Value") with 'WINCO' (Manual Fill)
+- Click: get_by_role("button", name="Apply")
+- Click: locator(".ag-icon.ag-icon-filter").first
+- Click: get_by_role("button", name="Reset")
+- Click: locator(".w-100.p-h-16.p-v-8.dropdown-label.icon-small-dropdown > .d-flex.align-items-center > .dropdown-caret").first
+- Click: get_by_text("In progress")
+- Click: locator(".w-100.p-h-16.p-v-8.dropdown-label.icon-small-dropdown > .d-flex.align-items-center > .dropdown-caret").first
+- Click: get_by_text("Completed")
+- Click: locator(".w-100.p-h-16.p-v-8.dropdown-label.icon-small-dropdown > .d-flex.align-items-center > .dropdown-caret").first
+- Click: get_by_text("Not started")
+- Dblclick: get_by_role("treegrid").get_by_text("WALMART STORES HQ")
+- Dblclick: locator("span").filter(has_text="WALMART").first
+- Dblclick: get_by_role("treegrid").get_by_text("WALMART 0906 SC B-0006805-01-")
+- Click: get_by_text("Drill up")
+- Click: locator(".ag-row-even.ag-row-focus.ag-row-not-inline-editing.ag-row.ag-row-level-0.ag-row-position-absolute.ag-row-first.ag-row-hover > .ag-cell-value > .ag-cell-wrapper")
+- Click: get_by_text("Drill up")
+- Click: get_by_role("treegrid").get_by_text("WALMART STORES HQ")
+- Click: get_by_text("Drill up")
+- Click: get_by_role("columnheader", name="6W-Actuals")
+- Click: locator("a").filter(has_text="2")
+- Click: locator(".zeb-nav-to-first")
+- Check: get_by_role("gridcell", name="Press Space to toggle row selection (unchecked)   WALMART STORES HQ").get_by_label("Press Space to toggle row")
+- Uncheck: locator(".checkbox-primary-color").first
+- Check: locator(".checkbox-primary-color").first
+- Uncheck: locator(".d-flex.align-items-center.checkbox-primary-color").first
+- Uncheck: locator(".ag-row-odd > .ag-cell-value > .ag-cell-wrapper > .ag-group-value > aeap-group-cell-renderer > .d-flex.align-items-center.w-fit-content > .d-flex").first
+- Click: get_by_role("button", name="columns").nth(1)
+- Check: get_by_role("checkbox", name="Toggle All Columns Visibility")
+- Click: get_by_role("textbox", name="Filter Columns Input")
+- Fill: get_by_role("textbox", name="Filter Columns Input") with 'User Bias' (Manual Fill)
+- Click: get_by_role("textbox", name="Filter Columns Input")
+- Press: get_by_role("textbox", name="Filter Columns Input")
+- Fill: get_by_role("textbox", name="Filter Columns Input") with '' (Manual Fill)
+- Check: get_by_role("checkbox", name="Toggle All Columns Visibility")
+- Click: get_by_role("button", name="columns").nth(1)
+- Click: locator("div:nth-child(3) > #preference-iconId > .legend-font > .multiselect-dropdown > .pointer")
+- Click: get_by_text("Save Preference")
+- Click: locator("div:nth-child(2) > #export-iconId > .icon-color-toolbar-active")
+- Download action completed
+- Click: locator("div:nth-child(3) > #preference-iconId > .legend-font > .multiselect-dropdown > .pointer")
+- Click: get_by_text("Reset Preference")
+- Click: locator(".ag-header-cell.ag-header-parent-hidden.ag-header-background.ag-focus-managed.ag-header-active > .ag-header-cell-comp-wrapper > .ag-cell-label-container > .ag-header-icon > .ag-icon")
+- Fill: get_by_role("spinbutton", name="Filter Value") with '761' (Manual Fill)
+- Click: get_by_label("Column Filter").get_by_role("button", name="Apply")
+- Click: get_by_label("Column Filter").get_by_role("button", name="Reset")
+- Check: locator(".checkbox-primary-color").first
+- Dblclick: locator("span").filter(has_text="ENTENMANNS").first
+- Dblclick: locator("span").filter(has_text="EN BITES").first
+- Dblclick: get_by_text("EN LITTLE BITES CP").first
+- Click: get_by_text("EN LB CHOCCH MFN 10P-").first
+- Click: get_by_text("Drill up")
+- Click: locator("esp-card-component").filter(has_text="Products10 rows out of 11").locator("a")
+- Click: locator("div:nth-child(3) > esp-pagination-v2 > .d-flex.w-100 > .pagination-pager > .pagination-first > .zeb-nav-to-first")
+- Click: get_by_role("button", name="Apply")
+- Click: locator("div").filter(has_text=re.compile(r"^Filter$")).nth(1)
+- Click: locator("#time-filterId > .wr-20 > esp-multiselect-dropdown > .multiselect-dropdown > div > .w-100 > .d-flex.align-items-center > .dropdown-caret")
+- Click: locator("div").filter(has_text=re.compile(r"^Latest 5 Next 4$")).nth(1)
+- Click: locator("#time-filterId > .wr-20 > esp-multiselect-dropdown > .multiselect-dropdown > div > .w-100 > .d-flex.align-items-center > .dropdown-caret")
+- Click: locator("div").filter(has_text=re.compile(r"^Latest 5 Next 12$")).nth(1)
+- Click: locator("#time-filterId > .wr-20 > esp-multiselect-dropdown > .multiselect-dropdown > div > .w-100 > .d-flex.align-items-center > .dropdown-caret")
+- Click: locator("div").filter(has_text=re.compile(r"^Latest 13 Next 4$")).nth(1)
+- Click: locator("esp-card-component").filter(has_text="Weekly Summary Customer:").get_by_role("button")
+- Uncheck: get_by_role("treeitem", name="-11-02 (45) Column").get_by_label("Press SPACE to toggle visibility (visible)")
+- Uncheck: get_by_role("treeitem", name="-11-09 (46) Column").get_by_label("Press SPACE to toggle visibility (visible)")
+- Uncheck: get_by_role("treeitem", name="-11-16 (47) Column").get_by_label("Press SPACE to toggle visibility (visible)")
+- Check: get_by_role("checkbox", name="Toggle All Columns Visibility")
+- Click: locator("div:nth-child(4) > #preference-iconId > .legend-font > .multiselect-dropdown > .pointer")
+- Click: get_by_text("Save Preference")
+- Click: locator("div:nth-child(4) > #preference-iconId > .legend-font > .multiselect-dropdown > .pointer")
+- Click: get_by_text("Reset Preference")
+- Click: locator("div:nth-child(3) > #export-iconId > .icon-color-toolbar-active")
+- Download action completed
+- Click: locator(".align-middle").first
+- Click: get_by_text("Event").nth(1)
+- Click: locator("esp-card-component").filter(has_text="Event Details columns (0)").get_by_role("button")
+- Uncheck: get_by_role("treeitem", name="Event Column").get_by_label("Press SPACE to toggle visibility (visible)")
+- Uncheck: get_by_role("treeitem", name="UPC 12 Column").get_by_label("Press SPACE to toggle visibility (visible)")
+- Uncheck: get_by_role("treeitem", name="Customer Level 2 Column").get_by_label("Press SPACE to toggle visibility (visible)")
+- Uncheck: get_by_role("treeitem", name="Start Date Column").get_by_label("Press SPACE to toggle visibility (visible)")
+- Uncheck: get_by_role("treeitem", name="End Date Column").get_by_label("Press SPACE to toggle visibility (visible)")
+- Uncheck: get_by_role("treeitem", name="Max Promo Price Column").get_by_label("Press SPACE to toggle visibility (visible)")
+- Uncheck: get_by_role("treeitem", name="Min Promo Price Column").get_by_label("Press SPACE to toggle visibility (visible)")
+- Check: get_by_role("checkbox", name="Toggle All Columns Visibility")
+- Click: get_by_role("textbox", name="Filter Columns Input")
+- Fill: get_by_role("textbox", name="Filter Columns Input") with 'UPC' (Manual Fill)
+- Click: locator("div:nth-child(7) > div > esp-grid-container > esp-card-component > .card-container > .title > .grid-icons-container > esp-grid-icons-component > .display-grid-icons > div:nth-child(2) > #preference-iconId > .legend-font > .multiselect-dropdown > .pointer")
+- Click: get_by_text("Save Preference")
+- Click: locator("div:nth-child(7) > div > esp-grid-container > esp-card-component > .card-container > .title > .grid-icons-container > esp-grid-icons-component > .display-grid-icons > div > #export-iconId > .icon-color-toolbar-active")
+- Download action completed
+- Click: locator("a").nth(2)
+- Click: locator("a").filter(has_text="3")
+- Click: locator("div:nth-child(7) > div > esp-grid-container > esp-card-component > .card-container > .card-content > esp-row-dimentional-grid > div > #paginationId > esp-pagination-v2 > .d-flex.w-100 > .pagination-pager > .pagination-first")
+- Click: get_by_text("View 10 row(s)").nth(2)
+- Click: locator("div").filter(has_text=re.compile(r"^View 20 row\(s\)$")).nth(1)
+- Click: locator(".ag-header-cell.ag-header-parent-hidden.ag-header-cell-sortable.ag-header-background.ag-focus-managed.ag-header-active > .ag-header-cell-comp-wrapper > .ag-cell-label-container > .ag-header-icon > .ag-icon")
+- Fill: get_by_role("textbox", name="Filter Value") with 'Promotion' (Manual Fill)
+- Click: get_by_label("Column Filter").get_by_role("button", name="Apply")
+- Click: locator(".ag-header-cell.ag-header-parent-hidden.ag-header-cell-sortable.ag-header-background.ag-focus-managed.ag-header-cell-filtered > .ag-header-cell-comp-wrapper > .ag-cell-label-container")
+- Click: locator(".ag-header-icon.ag-header-cell-filter-button.ag-filter-active > .ag-icon")
+- Click: get_by_label("Column Filter").get_by_role("button", name="Reset")
+- Dblclick: get_by_role("gridcell", name="Promotion-TH PRO BAGEL ROLLBACK 12/29/25 thru 03/29/")

@@ -1,0 +1,292 @@
+[
+    {
+        "name": "Imports and Setup",
+        "start_line": 1,
+        "end_line": 2
+    },
+    {
+        "name": "Browser Initialization and Context Setup",
+        "start_line": 5,
+        "end_line": 11
+    },
+    {
+        "name": "Initial Navigation to Dashboard",
+        "start_line": 12,
+        "end_line": 13
+    },
+    {
+        "name": "Customer Total Column Selection",
+        "start_line": 14,
+        "end_line": 19
+    },
+    {
+        "name": "Filter Columns Input Interaction",
+        "start_line": 20,
+        "end_line": 25
+    },
+    {
+        "name": "Column Selection and Checkbox Toggle",
+        "start_line": 26,
+        "end_line": 29
+    },
+    {
+        "name": "Filter Reset and Additional Column Selection",
+        "start_line": 30,
+        "end_line": 37
+    },
+    {
+        "name": "System Forecast Column Selection",
+        "start_line": 38,
+        "end_line": 45
+    },
+    {
+        "name": "6 Week Metrics Column Selection",
+        "start_line": 46,
+        "end_line": 59
+    },
+    {
+        "name": "Column Selection Actions",
+        "start_line": 60,
+        "end_line": 67
+    },
+    {
+        "name": "File Export Handling",
+        "start_line": 68,
+        "end_line": 73
+    },
+    {
+        "name": "Preference Management",
+        "start_line": 74,
+        "end_line": 81
+    },
+    {
+        "name": "Grid Interaction and Column Configuration",
+        "start_line": 82,
+        "end_line": 93
+    },
+    {
+        "name": "Column Filtering and Visibility Management",
+        "start_line": 94,
+        "end_line": 107
+    },
+    {
+        "name": "System Forecast Column Selection",
+        "start_line": 108,
+        "end_line": 119
+    },
+    {
+        "name": "Column Selection Actions",
+        "start_line": 120,
+        "end_line": 137
+    },
+    {
+        "name": "Customer Columns Expansion and Export",
+        "start_line": 138,
+        "end_line": 145
+    },
+    {
+        "name": "Preferences Management",
+        "start_line": 146,
+        "end_line": 153
+    },
+    {
+        "name": "Customer Column Sorting and Filtering",
+        "start_line": 154,
+        "end_line": 179
+    },
+    {
+        "name": "Filter Option Selection and Confirmation",
+        "start_line": 180,
+        "end_line": 193
+    },
+    {
+        "name": "Logical Operator Selection",
+        "start_line": 194,
+        "end_line": 197
+    },
+    {
+        "name": "Column Filter and Value Input",
+        "start_line": 198,
+        "end_line": 203
+    },
+    {
+        "name": "Filter Reset and Application",
+        "start_line": 204,
+        "end_line": 211
+    },
+    {
+        "name": "Row and Checkbox Selection",
+        "start_line": 212,
+        "end_line": 219
+    },
+    {
+        "name": "Sorting and Filter Menu Interaction",
+        "start_line": 220,
+        "end_line": 225
+    },
+    {
+        "name": "Equality and Comparison Filter Selection",
+        "start_line": 226,
+        "end_line": 239
+    },
+    {
+        "name": "Filter Selection and Confirmation",
+        "start_line": 240,
+        "end_line": 261
+    },
+    {
+        "name": "Filter Reset and Application",
+        "start_line": 262,
+        "end_line": 269
+    },
+    {
+        "name": "Sorting Operations",
+        "start_line": 270,
+        "end_line": 279
+    },
+    {
+        "name": "Filter Menu Interaction",
+        "start_line": 280,
+        "end_line": 285
+    },
+    {
+        "name": "Filtering Operator Selection",
+        "start_line": 286,
+        "end_line": 299
+    },
+    {
+        "name": "Filter Operator Selection",
+        "start_line": 300,
+        "end_line": 311
+    },
+    {
+        "name": "Filter Condition and Value Input",
+        "start_line": 312,
+        "end_line": 321
+    },
+    {
+        "name": "Filter Application and Reset",
+        "start_line": 322,
+        "end_line": 328
+    },
+    {
+        "name": "Column and Filter Options",
+        "start_line": 329,
+        "end_line": 334
+    },
+    {
+        "name": "Pagination Interaction",
+        "start_line": 335,
+        "end_line": 357
+    },
+    {
+        "name": "Row Display Adjustment",
+        "start_line": 358,
+        "end_line": 359
+    },
+    {
+        "name": "Row Display and Selection",
+        "start_line": 360,
+        "end_line": 364
+    },
+    {
+        "name": "Filter Options Interaction",
+        "start_line": 365,
+        "end_line": 376
+    },
+    {
+        "name": "Daily Summary Navigation",
+        "start_line": 377,
+        "end_line": 386
+    },
+    {
+        "name": "Dropdown Selection and Confirmation",
+        "start_line": 387,
+        "end_line": 412
+    },
+    {
+        "name": "Specific Option Selection",
+        "start_line": 413,
+        "end_line": 419
+    },
+    {
+        "name": "Dropdown Selection and Navigation",
+        "start_line": 420,
+        "end_line": 428
+    },
+    {
+        "name": "Column Visibility Management",
+        "start_line": 429,
+        "end_line": 444
+    },
+    {
+        "name": "File Export and Preferences Management",
+        "start_line": 445,
+        "end_line": 459
+    },
+    {
+        "name": "Filter and Grid Interaction",
+        "start_line": 460,
+        "end_line": 479
+    },
+    {
+        "name": "Grid Interaction and Expansion",
+        "start_line": 480,
+        "end_line": 489
+    },
+    {
+        "name": "Column and Trend Analysis Interaction",
+        "start_line": 490,
+        "end_line": 493
+    },
+    {
+        "name": "Chart and Graphical Element Interaction",
+        "start_line": 494,
+        "end_line": 503
+    },
+    {
+        "name": "User Suggested and Override Interaction",
+        "start_line": 504,
+        "end_line": 513
+    },
+    {
+        "name": "Line-Bar Chart Interaction",
+        "start_line": 514,
+        "end_line": 537
+    },
+    {
+        "name": "Dropdown Interaction",
+        "start_line": 538,
+        "end_line": 539
+    },
+    {
+        "name": "Customer Trend Interaction",
+        "start_line": 540,
+        "end_line": 541
+    },
+    {
+        "name": "Preference Management",
+        "start_line": 542,
+        "end_line": 549
+    },
+    {
+        "name": "Date Selection in SVG",
+        "start_line": 550,
+        "end_line": 557
+    },
+    {
+        "name": "SVG Path Interaction",
+        "start_line": 558,
+        "end_line": 575
+    },
+    {
+        "name": "Session Termination",
+        "start_line": 577,
+        "end_line": 581
+    },
+    {
+        "name": "Playwright Initialization",
+        "start_line": 584,
+        "end_line": 587
+    }
+]

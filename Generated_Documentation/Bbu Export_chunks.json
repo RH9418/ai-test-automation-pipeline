@@ -1,0 +1,77 @@
+[
+    {
+        "name": "Imports and Setup",
+        "start_line": 1,
+        "end_line": 2
+    },
+    {
+        "name": "Browser Initialization",
+        "start_line": 5,
+        "end_line": 11
+    },
+    {
+        "name": "Page Navigation",
+        "start_line": 12,
+        "end_line": 13
+    },
+    {
+        "name": "Filter Interaction",
+        "start_line": 14,
+        "end_line": 19
+    },
+    {
+        "name": "Date Picker Interaction",
+        "start_line": 20,
+        "end_line": 43
+    },
+    {
+        "name": "Dropdown Interaction",
+        "start_line": 44,
+        "end_line": 59
+    },
+    {
+        "name": "Brand Selection",
+        "start_line": 60,
+        "end_line": 67
+    },
+    {
+        "name": "Product Selection",
+        "start_line": 68,
+        "end_line": 73
+    },
+    {
+        "name": "Location Level Selection",
+        "start_line": 74,
+        "end_line": 99
+    },
+    {
+        "name": "BUSS Route and Customer Level Selection",
+        "start_line": 100,
+        "end_line": 111
+    },
+    {
+        "name": "Time and Measures Selection",
+        "start_line": 112,
+        "end_line": 119
+    },
+    {
+        "name": "Measure Selection Workflow",
+        "start_line": 120,
+        "end_line": 143
+    },
+    {
+        "name": "Download and Reset Actions",
+        "start_line": 144,
+        "end_line": 151
+    },
+    {
+        "name": "Browser Cleanup",
+        "start_line": 153,
+        "end_line": 157
+    },
+    {
+        "name": "Playwright Execution",
+        "start_line": 160,
+        "end_line": 161
+    }
+]

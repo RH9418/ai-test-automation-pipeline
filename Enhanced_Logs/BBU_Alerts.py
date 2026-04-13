@@ -4,8 +4,43 @@ import sys
 import time
 import random
 import re
+import atexit
+import contextlib
 from datetime import datetime
 from playwright.sync_api import sync_playwright, Playwright, expect, TimeoutError
+
+# --- Execution Tracking & Reporting ---
+_successful_actions = []
+_failed_actions = []
+
+def _generate_execution_report():
+    report_dir = "Execution_Reports"
+    os.makedirs(report_dir, exist_ok=True)
+    script_name = "BBU_Alerts"
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    report_path = os.path.join(report_dir, f"{script_name}_Execution_{timestamp}.txt")
+    
+    with open(report_path, "w", encoding="utf-8") as f:
+        f.write(f"Execution Report for: {script_name}\n")
+        f.write("="*80 + "\n\n")
+        f.write(f"Total Successful Automated Actions: {len(_successful_actions)}\n")
+        f.write(f"Total Failed (Manual Intervention) Actions: {len(_failed_actions)}\n\n")
+        
+        f.write("--- ❌ FAILED ACTIONS (Required Human Intervention) ---\n")
+        if _failed_actions:
+            for fa in _failed_actions:
+                f.write(f"- {fa}\n")
+        else:
+            f.write("None! 100% of actions succeeded automatically.\n")
+            
+        f.write("\n--- ✅ SUCCESSFUL ACTIONS ---\n")
+        for sa in _successful_actions:
+            f.write(f"- {sa}\n")
+            
+    print(f"\n📊 Execution Report saved to: {report_path}\n")
+
+# Register the report to generate automatically when the script finishes or exits
+atexit.register(_generate_execution_report)
 
 # --- Screenshot Directory Setup ---
 SCREENSHOT_DIR = r"Test_Screenshots/BBU_Alerts"
@@ -85,6 +120,35 @@ def capture_annotated_screenshot(page, locator, full_action_description: str):
     except Exception as e:
         print(f"   └── ⚠️ Screenshot Error: {e}")
 
+# 🔴 FIX: Safe Download Context Manager
+@contextlib.contextmanager
+def safe_download(page, timeout_ms=300000): # 5 minutes default timeout
+    class DummyEvent:
+        @property
+        def value(self):
+            print("   └── ⚠️ Dummy download object returned. Proceeding safely.")
+            return None
+            
+    try:
+        print(f"\n⏳ Waiting for download to complete (Timeout: {timeout_ms/1000}s)...")
+        with page.expect_download(timeout=timeout_ms) as d:
+            yield d
+        print("✅ SUCCESS: Download completed.")
+        _successful_actions.append("Download action completed")
+    except Exception as e:
+        print(f"\n❌ ERROR: Download failed or timed out: {e}")
+        _failed_actions.append("Download action failed/timed out")
+        
+        while True:
+            print("\n" + "="*80 + "\n ACTION REQUIRED: Download Error\n" + "="*80)
+            print(" Failed: Download operation timed out.")
+            choice = input(" Did you perform the download manually or want to proceed anyway? (y/n): ").lower().strip()
+            if choice == 'y': break
+            elif choice == 'n': sys.exit(0)
+            
+        yield DummyEvent()
+
+
 def safe_action(page, locator, action_name: str, description: str, *action_args, **action_kwargs):
     '''Performs action with spotlight screenshots and manual fallbacks.'''
     full_desc = f"{action_name.capitalize()}: {description}"
@@ -97,6 +161,9 @@ def safe_action(page, locator, action_name: str, description: str, *action_args,
             print(f"\n⏸️ PAUSING FOR INPUT: About to fill '{description}'.")
             input("   └── Perform input manually in browser, then PRESS [ENTER] to continue...")
             page.wait_for_load_state('networkidle', timeout=5000)
+            
+            # Manual fills are considered successful since the user executes them
+            _successful_actions.append(full_desc + " (Manual Fill)")
             return
 
         # Screenshot Logic
@@ -110,6 +177,7 @@ def safe_action(page, locator, action_name: str, description: str, *action_args,
             try: locator.close()
             except: pass
             print(f"✅ SUCCESS: {description} (Teardown handled by Pytest)")
+            _successful_actions.append(full_desc)
             return
             
         if locator != page:
@@ -118,9 +186,14 @@ def safe_action(page, locator, action_name: str, description: str, *action_args,
         # Execution
         action_func = getattr(locator, action_name)
         action_func(*action_args, **action_kwargs)
+        
         print(f"✅ SUCCESS: {description}")
+        _successful_actions.append(full_desc) # Track success
+        
     except Exception as e:
         print(f"❌ ERROR: Failed {action_name} on '{description}'.")
+        _failed_actions.append(full_desc) # Track failure
+        
         while True:
             print("\n" + "="*80 + "\n ACTION REQUIRED: Script Error\n" + "="*80)
             print(f" Failed: {full_desc}")
@@ -166,7 +239,7 @@ def run(playwright: Playwright) -> None:
     safe_action(page, page.get_by_role("treeitem", name="User Bias Column").get_by_label("Press SPACE to toggle visibility (visible)"), 'uncheck', "get_by_role(\"treeitem\", name=\"User Bias Column\").get_by_label(\"Press SPACE to toggle visibility (visible)\")", )
     safe_action(page, page.locator(".pointer.zeb-adjustments"), 'click', "locator(\".pointer.zeb-adjustments\")", )
     safe_action(page, page.get_by_text("Save Preference"), 'click', "get_by_text(\"Save Preference\")", )
-    with page.expect_download() as download_info:
+    with safe_download(page) as download_info:
         safe_action(page, page.locator(".icon-color-toolbar-active.zeb-download-underline"), 'click', "locator(\".icon-color-toolbar-active.zeb-download-underline\")", )
     download = download_info.value
     safe_action(page, page.locator(".pointer.zeb-adjustments"), 'click', "locator(\".pointer.zeb-adjustments\")", )
@@ -211,7 +284,7 @@ def run(playwright: Playwright) -> None:
     safe_action(page, page.get_by_role("button", name="columns").nth(1), 'click', "get_by_role(\"button\", name=\"columns\").nth(1)", )
     safe_action(page, page.locator("div:nth-child(3) > #preference-iconId > .legend-font > .multiselect-dropdown > .pointer"), 'click', "locator(\"div:nth-child(3) > #preference-iconId > .legend-font > .multiselect-dropdown > .pointer\")", )
     safe_action(page, page.get_by_text("Save Preference"), 'click', "get_by_text(\"Save Preference\")", )
-    with page.expect_download() as download1_info:
+    with safe_download(page) as download1_info:
         safe_action(page, page.locator("div:nth-child(2) > #export-iconId > .icon-color-toolbar-active"), 'click', "locator(\"div:nth-child(2) > #export-iconId > .icon-color-toolbar-active\")", )
     download1 = download1_info.value
     safe_action(page, page.locator("div:nth-child(3) > #preference-iconId > .legend-font > .multiselect-dropdown > .pointer"), 'click', "locator(\"div:nth-child(3) > #preference-iconId > .legend-font > .multiselect-dropdown > .pointer\")", )
@@ -248,7 +321,7 @@ def run(playwright: Playwright) -> None:
     safe_action(page, page.get_by_text("Save Preference"), 'click', "get_by_text(\"Save Preference\")", )
     safe_action(page, page.locator("div:nth-child(4) > #preference-iconId > .legend-font > .multiselect-dropdown > .pointer"), 'click', "locator(\"div:nth-child(4) > #preference-iconId > .legend-font > .multiselect-dropdown > .pointer\")", )
     safe_action(page, page.get_by_text("Reset Preference"), 'click', "get_by_text(\"Reset Preference\")", )
-    with page.expect_download() as download2_info:
+    with safe_download(page) as download2_info:
         safe_action(page, page.locator("div:nth-child(3) > #export-iconId > .icon-color-toolbar-active"), 'click', "locator(\"div:nth-child(3) > #export-iconId > .icon-color-toolbar-active\")", )
     download2 = download2_info.value
     safe_action(page, page.locator(".align-middle").first, 'click', "locator(\".align-middle\").first", )
@@ -267,7 +340,7 @@ def run(playwright: Playwright) -> None:
     safe_action(page, page.get_by_role("checkbox", name="Press SPACE to toggle visibility (visible)"), 'uncheck', "get_by_role(\"checkbox\", name=\"Press SPACE to toggle visibility (visible)\")", )
     safe_action(page, page.locator("div:nth-child(7) > div > esp-grid-container > esp-card-component > .card-container > .title > .grid-icons-container > esp-grid-icons-component > .display-grid-icons > div:nth-child(2) > #preference-iconId > .legend-font > .multiselect-dropdown > .pointer"), 'click', "locator(\"div:nth-child(7) > div > esp-grid-container > esp-card-component > .card-container > .title > .grid-icons-container > esp-grid-icons-component > .display-grid-icons > div:nth-child(2) > #preference-iconId > .legend-font > .multiselect-dropdown > .pointer\")", )
     safe_action(page, page.get_by_text("Save Preference"), 'click', "get_by_text(\"Save Preference\")", )
-    with page.expect_download() as download3_info:
+    with safe_download(page) as download3_info:
         safe_action(page, page.locator("div:nth-child(7) > div > esp-grid-container > esp-card-component > .card-container > .title > .grid-icons-container > esp-grid-icons-component > .display-grid-icons > div > #export-iconId > .icon-color-toolbar-active"), 'click', "locator(\"div:nth-child(7) > div > esp-grid-container > esp-card-component > .card-container > .title > .grid-icons-container > esp-grid-icons-component > .display-grid-icons > div > #export-iconId > .icon-color-toolbar-active\")", )
     download3 = download3_info.value
     safe_action(page, page.locator("a").nth(2), 'click', "locator(\"a\").nth(2)", )

@@ -5,6 +5,7 @@ import time
 import random
 import re
 import atexit
+import contextlib
 from datetime import datetime
 from playwright.sync_api import sync_playwright, Playwright, expect, TimeoutError
 
@@ -38,9 +39,7 @@ def _generate_execution_report():
             
     print(f"\n📊 Execution Report saved to: {report_path}\n")
 
-# Register the report to generate automatically when the script finishes or exits
 atexit.register(_generate_execution_report)
-
 
 # --- Screenshot Directory Setup ---
 SCREENSHOT_DIR = r"Test_Screenshots/By_Product_Daily_copy"
@@ -54,7 +53,6 @@ def capture_annotated_screenshot(page, locator, full_action_description: str):
     screenshot_counter += 1
     
     try:
-        # 1. Force element into view so the agent can see it
         locator.scroll_into_view_if_needed()
         locator.wait_for(state='visible', timeout=5000)
         
@@ -64,11 +62,8 @@ def capture_annotated_screenshot(page, locator, full_action_description: str):
             return
             
         js_description = full_action_description.replace("'", "\\'")
-        # 2. Inject a high-visibility "Spotlight" annotation
         page.evaluate(f'''(params) => {{
             const {{ box, desc }} = params;
-            
-            // Create High-Visibility Box
             const div = document.createElement('div');
             div.id = 'ge-spotlight-box';
             div.style.position = 'absolute';
@@ -76,13 +71,12 @@ def capture_annotated_screenshot(page, locator, full_action_description: str):
             div.style.top = `${{box.y}}px`;
             div.style.width = `${{box.width}}px`;
             div.style.height = `${{box.height}}px`;
-            div.style.border = '5px solid #FF0000'; // Thick Red
-            div.style.boxShadow = '0 0 15px 5px rgba(255, 0, 0, 0.7)'; // Red Glow
+            div.style.border = '5px solid #FF0000';
+            div.style.boxShadow = '0 0 15px 5px rgba(255, 0, 0, 0.7)';
             div.style.boxSizing = 'border-box';
             div.style.zIndex = '2147483647';
-            div.style.pointerEvents = 'none'; // Don't interfere with clicks
+            div.style.pointerEvents = 'none';
             
-            // Create High-Contrast Label
             const label = document.createElement('div');
             label.id = 'ge-spotlight-label';
             label.textContent = desc;
@@ -101,24 +95,47 @@ def capture_annotated_screenshot(page, locator, full_action_description: str):
             document.body.appendChild(label);
         }}''', {'box': box, 'desc': js_description})
         
-        # 3. Small sleep to allow the browser to 'paint' the red box
         time.sleep(0.2)
         timestamp = datetime.now().strftime("%H-%M-%S")
         safe_filename = re.sub(r'[^a-z0-9]', '_', full_action_description.lower())[:40]
         filename = f"{timestamp}_{screenshot_counter:02d}_{safe_filename}.png"
         path = os.path.join(SCREENSHOT_DIR, filename)
         
-        # Capture the screen
-        page.screenshot(path=path, full_page=False) # Full page can sometimes blur annotations
+        page.screenshot(path=path, full_page=False)
         print(f"   └── 📸 Screenshot saved: {path}")
         
-        # 4. Clean up
         page.evaluate('''() => {
             document.getElementById('ge-spotlight-box')?.remove();
             document.getElementById('ge-spotlight-label')?.remove();
         }''')
     except Exception as e:
         print(f"   └── ⚠️ Screenshot Error: {e}")
+
+# 🔴 FIX: Injected the safe_download context manager to prevent timeouts
+@contextlib.contextmanager
+def safe_download(page, timeout_ms=300000): # 5 minutes default timeout
+    class DummyEvent:
+        @property
+        def value(self):
+            print("   └── ⚠️ Dummy download object returned. Proceeding safely.")
+            return None
+            
+    try:
+        print(f"\n⏳ Waiting for download to complete (Timeout: {timeout_ms/1000}s)...")
+        with page.expect_download(timeout=timeout_ms) as d:
+            yield d
+        print("✅ SUCCESS: Download completed.")
+        _successful_actions.append("Download action completed")
+    except Exception as e:
+        print(f"\n❌ ERROR: Download failed or timed out: {e}")
+        _failed_actions.append("Download action failed/timed out")
+        while True:
+            print("\n" + "="*80 + "\n ACTION REQUIRED: Download Error\n" + "="*80)
+            print(" Failed: Download operation timed out.")
+            choice = input(" Did you perform the download manually or want to proceed anyway? (y/n): ").lower().strip()
+            if choice == 'y': break
+            elif choice == 'n': sys.exit(0)
+        yield DummyEvent()
 
 def safe_action(page, locator, action_name: str, description: str, *action_args, **action_kwargs):
     '''Performs action with spotlight screenshots and manual fallbacks.'''
@@ -127,17 +144,13 @@ def safe_action(page, locator, action_name: str, description: str, *action_args,
         full_desc += f" with '{action_args[0] if action_args else ''}'"
         
     try:
-        # Pre-Fill Intervention
         if action_name == 'fill':
             print(f"\n⏸️ PAUSING FOR INPUT: About to fill '{description}'.")
             input("   └── Perform input manually in browser, then PRESS [ENTER] to continue...")
             page.wait_for_load_state('networkidle', timeout=5000)
-            
-            # Manual fills are considered successful since the user executes them
             _successful_actions.append(full_desc + " (Manual Fill)")
             return
 
-        # Screenshot Logic
         if action_name in ['click', 'dblclick', 'check', 'uncheck', 'hover']:
             try:
                 locator.hover(timeout=2000)
@@ -154,16 +167,15 @@ def safe_action(page, locator, action_name: str, description: str, *action_args,
         if locator != page:
             capture_annotated_screenshot(page, locator, full_desc)
             
-        # Execution
         action_func = getattr(locator, action_name)
         action_func(*action_args, **action_kwargs)
         
         print(f"✅ SUCCESS: {description}")
-        _successful_actions.append(full_desc) # Track success
+        _successful_actions.append(full_desc) 
         
     except Exception as e:
         print(f"❌ ERROR: Failed {action_name} on '{description}'.")
-        _failed_actions.append(full_desc) # Track failure
+        _failed_actions.append(full_desc) 
         
         while True:
             print("\n" + "="*80 + "\n ACTION REQUIRED: Script Error\n" + "="*80)
@@ -223,7 +235,7 @@ def run(playwright: Playwright) -> None:
     safe_action(page, page.get_by_label("6 Week Aged Returns Units").get_by_text("6 Week Aged Returns Units"), 'click', "get_by_label(\"6 Week Aged Returns Units\").get_by_text(\"6 Week Aged Returns Units\")", )
     safe_action(page, page.get_by_role("checkbox", name="Toggle All Columns Visibility"), 'check', "get_by_role(\"checkbox\", name=\"Toggle All Columns Visibility\")", )
     safe_action(page, page.locator("esp-card-component").filter(has_text="Product Total columns (0)").get_by_role("button"), 'click', "locator(\"esp-card-component\").filter(has_text=\"Product Total columns (0)\").get_by_role(\"button\")", )
-    with page.expect_download() as download_info:
+    with safe_download(page) as download_info:
         safe_action(page, page.locator(".icon-color-toolbar-active.zeb-download-underline").first, 'click', "locator(\".icon-color-toolbar-active.zeb-download-underline\").first", )
     download = download_info.value
     safe_action(page, page.get_by_text("Please note that a maximum of"), 'click', "get_by_text(\"Please note that a maximum of\")", )
@@ -247,7 +259,7 @@ def run(playwright: Playwright) -> None:
     safe_action(page, page.get_by_role("textbox", name="Filter Columns Input"), 'press', "get_by_role(\"textbox\", name=\"Filter Columns Input\")", "Enter")
     safe_action(page, page.get_by_role("checkbox", name="Toggle All Columns Visibility"), 'uncheck', "get_by_role(\"checkbox\", name=\"Toggle All Columns Visibility\")", )
     safe_action(page, page.get_by_role("checkbox", name="Toggle All Columns Visibility"), 'check', "get_by_role(\"checkbox\", name=\"Toggle All Columns Visibility\")", )
-    safe_action(page, page.locator("#ag-87 > .ag-column-panel > .ag-column-select > .ag-column-select-list > .ag-virtual-list-viewport > .ag-virtual-list-container > div > .ag-column-select-column").first, 'click', "locator(\"#ag-87 > .ag-column-panel > .ag-column-select > .ag-column-select-list > .ag-virtual-list-viewport > .ag-virtual-list-container > div > .ag-column-select-column\").first", )
+    safe_action(page, page.locator(".ag-root-wrapper > .ag-column-panel > .ag-column-select > .ag-column-select-list > .ag-virtual-list-viewport > .ag-virtual-list-container > div > .ag-column-select-column").first, 'click', "locator(\".ag-root-wrapper > .ag-column-panel > .ag-column-select > .ag-column-select-list > .ag-virtual-list-viewport > .ag-virtual-list-container > div > .ag-column-select-column\").first", )
     safe_action(page, page.get_by_role("treeitem", name="System Forecast Base (Plan Week) Column").get_by_label("Press SPACE to toggle visibility (visible)"), 'uncheck', "get_by_role(\"treeitem\", name=\"System Forecast Base (Plan Week) Column\").get_by_label(\"Press SPACE to toggle visibility (visible)\")", )
     safe_action(page, page.get_by_role("treeitem", name="System Forecast Promotion (Plan Week) Column").get_by_label("Press SPACE to toggle visibility (visible)"), 'uncheck', "get_by_role(\"treeitem\", name=\"System Forecast Promotion (Plan Week) Column\").get_by_label(\"Press SPACE to toggle visibility (visible)\")", )
     safe_action(page, page.get_by_role("treeitem", name="System Forecast Total (Plan+1").get_by_label("Press SPACE to toggle visibility (visible)"), 'uncheck', "get_by_role(\"treeitem\", name=\"System Forecast Total (Plan+1\").get_by_label(\"Press SPACE to toggle visibility (visible)\")", )
@@ -265,7 +277,7 @@ def run(playwright: Playwright) -> None:
     safe_action(page, page.get_by_role("checkbox", name="Press SPACE to toggle visibility (visible)"), 'uncheck', "get_by_role(\"checkbox\", name=\"Press SPACE to toggle visibility (visible)\")", )
     safe_action(page, page.get_by_role("checkbox", name="Toggle All Columns Visibility"), 'check', "get_by_role(\"checkbox\", name=\"Toggle All Columns Visibility\")", )
     safe_action(page, page.locator("esp-card-component").filter(has_text="Products columns (0)").get_by_role("button"), 'click', "locator(\"esp-card-component\").filter(has_text=\"Products columns (0)\").get_by_role(\"button\")", )
-    with page.expect_download() as download1_info:
+    with safe_download(page) as download1_info:
         safe_action(page, page.locator("div:nth-child(2) > #export-iconId > .icon-color-toolbar-active"), 'click', "locator(\"div:nth-child(2) > #export-iconId > .icon-color-toolbar-active\")", )
     download1 = download1_info.value
     safe_action(page, page.get_by_text("Please note that a maximum of"), 'click', "get_by_text(\"Please note that a maximum of\")", )
@@ -357,7 +369,7 @@ def run(playwright: Playwright) -> None:
     safe_action(page, page.get_by_label("LY 6 Week Scan Units Average").get_by_text("LY 6 Week Scan Units Average"), 'click', "get_by_label(\"LY 6 Week Scan Units Average\").get_by_text(\"LY 6 Week Scan Units Average\")", )
     safe_action(page, page.get_by_label("6 Week Scan Units Average Column", exact=True).get_by_text("Week Scan Units Average"), 'click', "get_by_label(\"6 Week Scan Units Average Column\", exact=True).get_by_text(\"Week Scan Units Average\")", )
     safe_action(page, page.locator("esp-card-component").filter(has_text="Products columns (0)").get_by_role("button"), 'click', "locator(\"esp-card-component\").filter(has_text=\"Products columns (0)\").get_by_role(\"button\")", )
-    with page.expect_download() as download2_info:
+    with safe_download(page) as download2_info:
         safe_action(page, page.locator("div:nth-child(2) > #export-iconId > .icon-color-toolbar-active"), 'click', "locator(\"div:nth-child(2) > #export-iconId > .icon-color-toolbar-active\")", )
     download2 = download2_info.value
     safe_action(page, page.get_by_text("Please note that a maximum of"), 'click', "get_by_text(\"Please note that a maximum of\")", )
@@ -423,7 +435,7 @@ def run(playwright: Playwright) -> None:
     safe_action(page, page.locator("esp-card-component").filter(has_text="Daily Summary Product:THOMAS").get_by_role("button"), 'click', "locator(\"esp-card-component\").filter(has_text=\"Daily Summary Product:THOMAS\").get_by_role(\"button\")", )
     safe_action(page, page.get_by_role("textbox", name="Filter Columns Input"), 'click', "get_by_role(\"textbox\", name=\"Filter Columns Input\")", )
     safe_action(page, page.get_by_role("textbox", name="Filter Columns Input"), 'fill', "get_by_role(\"textbox\", name=\"Filter Columns Input\")", "02/1")
-    safe_action(page, page.locator("#ag-4958 > .ag-column-panel > .ag-column-select > .ag-column-select-list > .ag-virtual-list-viewport > .ag-virtual-list-container > div > .ag-column-select-column").first, 'click', "locator(\"#ag-4958 > .ag-column-panel > .ag-column-select > .ag-column-select-list > .ag-virtual-list-viewport > .ag-virtual-list-container > div > .ag-column-select-column\").first", )
+    safe_action(page, page.locator(".ag-root-wrapper > .ag-column-panel > .ag-column-select > .ag-column-select-list > .ag-virtual-list-viewport > .ag-virtual-list-container > div > .ag-column-select-column").first, 'click', "locator(\".ag-root-wrapper > .ag-column-panel > .ag-column-select > .ag-column-select-list > .ag-virtual-list-viewport > .ag-virtual-list-container > div > .ag-column-select-column\").first", )
     safe_action(page, page.get_by_role("treeitem", name="/11(Wed) Column").get_by_label("Press SPACE to toggle visibility (visible)"), 'uncheck', "get_by_role(\"treeitem\", name=\"/11(Wed) Column\").get_by_label(\"Press SPACE to toggle visibility (visible)\")", )
     safe_action(page, page.get_by_role("treeitem", name="/12(Thu) Column").get_by_label("Press SPACE to toggle visibility (visible)"), 'uncheck', "get_by_role(\"treeitem\", name=\"/12(Thu) Column\").get_by_label(\"Press SPACE to toggle visibility (visible)\")", )
     safe_action(page, page.get_by_role("checkbox", name="Toggle All Columns Visibility"), 'check', "get_by_role(\"checkbox\", name=\"Toggle All Columns Visibility\")", )
@@ -448,7 +460,7 @@ def run(playwright: Playwright) -> None:
     safe_action(page, page.get_by_role("checkbox", name="Press SPACE to toggle visibility (hidden)"), 'check', "get_by_role(\"checkbox\", name=\"Press SPACE to toggle visibility (hidden)\")", )
     safe_action(page, page.locator("esp-card-component").filter(has_text="Daily Summary Product:THOMAS").get_by_role("button"), 'click', "locator(\"esp-card-component\").filter(has_text=\"Daily Summary Product:THOMAS\").get_by_role(\"button\")", )
     safe_action(page, page.locator("span:nth-child(6) > esp-grid-icons-component > .display-grid-icons > div:nth-child(2) > #export-iconId > .icon-color-toolbar-active"), 'click', "locator(\"span:nth-child(6) > esp-grid-icons-component > .display-grid-icons > div:nth-child(2) > #export-iconId > .icon-color-toolbar-active\")", )
-    with page.expect_download() as download3_info:
+    with safe_download(page) as download3_info:
         safe_action(page, page.get_by_text("Please note that a maximum of"), 'click', "get_by_text(\"Please note that a maximum of\")", )
     download3 = download3_info.value
     safe_action(page, page.locator("span:nth-child(6) > esp-grid-icons-component > .display-grid-icons > div:nth-child(3) > #preference-iconId > .legend-font > .multiselect-dropdown > .pointer"), 'click', "locator(\"span:nth-child(6) > esp-grid-icons-component > .display-grid-icons > div:nth-child(3) > #preference-iconId > .legend-font > .multiselect-dropdown > .pointer\")", )

@@ -1,0 +1,162 @@
+[
+    {
+        "name": "Imports and Setup",
+        "start_line": 1,
+        "end_line": 2
+    },
+    {
+        "name": "Browser Initialization and Context Setup",
+        "start_line": 5,
+        "end_line": 11
+    },
+    {
+        "name": "Navigation to Executive Dashboard",
+        "start_line": 12,
+        "end_line": 13
+    },
+    {
+        "name": "Filter Selection Workflow",
+        "start_line": 14,
+        "end_line": 37
+    },
+    {
+        "name": "Column Visibility Configuration",
+        "start_line": 38,
+        "end_line": 45
+    },
+    {
+        "name": "Preferences Management",
+        "start_line": 46,
+        "end_line": 49
+    },
+    {
+        "name": "File Download Handling",
+        "start_line": 50,
+        "end_line": 55
+    },
+    {
+        "name": "Reset Preferences",
+        "start_line": 56,
+        "end_line": 59
+    },
+    {
+        "name": "Filter Operations",
+        "start_line": 60,
+        "end_line": 69
+    },
+    {
+        "name": "Dropdown Status Selection",
+        "start_line": 70,
+        "end_line": 81
+    },
+    {
+        "name": "Treegrid Navigation and Context Menu Actions",
+        "start_line": 82,
+        "end_line": 99
+    },
+    {
+        "name": "Grid Interaction and Pagination",
+        "start_line": 100,
+        "end_line": 105
+    },
+    {
+        "name": "Checkbox Operations",
+        "start_line": 106,
+        "end_line": 115
+    },
+    {
+        "name": "Column Visibility Configuration",
+        "start_line": 116,
+        "end_line": 119
+    },
+    {
+        "name": "Filter Columns and Adjust Visibility",
+        "start_line": 120,
+        "end_line": 135
+    },
+    {
+        "name": "Save and Export Preferences",
+        "start_line": 136,
+        "end_line": 145
+    },
+    {
+        "name": "Reset Preferences and Apply Column Filter",
+        "start_line": 146,
+        "end_line": 159
+    },
+    {
+        "name": "Row Selection and Drill Down",
+        "start_line": 160,
+        "end_line": 171
+    },
+    {
+        "name": "Context Menu Actions and Navigation",
+        "start_line": 172,
+        "end_line": 179
+    },
+    {
+        "name": "Apply Filters and Interact with Filter Options",
+        "start_line": 180,
+        "end_line": 195
+    },
+    {
+        "name": "Weekly Summary Customer Card Interaction",
+        "start_line": 196,
+        "end_line": 205
+    },
+    {
+        "name": "Preference Management",
+        "start_line": 206,
+        "end_line": 213
+    },
+    {
+        "name": "File Export and Download",
+        "start_line": 214,
+        "end_line": 219
+    },
+    {
+        "name": "Event Section Interaction",
+        "start_line": 220,
+        "end_line": 239
+    },
+    {
+        "name": "Column Visibility and Filtering",
+        "start_line": 240,
+        "end_line": 247
+    },
+    {
+        "name": "Saving Preferences and Exporting Data",
+        "start_line": 248,
+        "end_line": 257
+    },
+    {
+        "name": "Pagination Navigation",
+        "start_line": 258,
+        "end_line": 263
+    },
+    {
+        "name": "Row Display Settings",
+        "start_line": 264,
+        "end_line": 267
+    },
+    {
+        "name": "Column Filtering and Resetting",
+        "start_line": 268,
+        "end_line": 279
+    },
+    {
+        "name": "Grid Cell Interaction",
+        "start_line": 280,
+        "end_line": 281
+    },
+    {
+        "name": "Page and Browser Cleanup",
+        "start_line": 282,
+        "end_line": 289
+    },
+    {
+        "name": "Playwright Session Execution",
+        "start_line": 292,
+        "end_line": 293
+    }
+]

@@ -72,10 +72,10 @@ playwright codegen "https://your-target-spa-url.com" -o Codegen_Logs/my_feature.
 The enhancer script wraps raw Playwright actions in a `safe_action` paradigm. This injects Javascript "Spotlights" (red bounding boxes) to highlight elements and adds manual fallbacks if an action fails. It also generates an `Enhancement_Report`.
 
 ```bash
-python enhance_playwright_scripts_with_report.py
+python enhance_playwright_ag_stable.py
 
 # Or for a specific file: 
-python enhance_playwright_scripts_with_report.py --files my_feature.py
+python enhance_playwright_ag_stable.py --files my_feature.py
 ```
 **Output:** `Enhanced_Logs/my_feature.py` and `Enhancement_Reports/my_feature_Report.txt`
 

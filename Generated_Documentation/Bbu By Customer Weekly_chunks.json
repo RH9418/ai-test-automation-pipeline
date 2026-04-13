@@ -1,0 +1,302 @@
+[
+    {
+        "name": "Imports and Setup",
+        "start_line": 1,
+        "end_line": 4
+    },
+    {
+        "name": "Browser Initialization and Page Navigation",
+        "start_line": 5,
+        "end_line": 13
+    },
+    {
+        "name": "Customer Total Columns Configuration",
+        "start_line": 14,
+        "end_line": 19
+    },
+    {
+        "name": "Column Visibility Toggle",
+        "start_line": 20,
+        "end_line": 25
+    },
+    {
+        "name": "Filter Columns Input Interaction",
+        "start_line": 26,
+        "end_line": 31
+    },
+    {
+        "name": "Column Selection and Visibility",
+        "start_line": 32,
+        "end_line": 35
+    },
+    {
+        "name": "Filter Reset",
+        "start_line": 36,
+        "end_line": 41
+    },
+    {
+        "name": "System Forecast Column Selection",
+        "start_line": 42,
+        "end_line": 53
+    },
+    {
+        "name": "Additional Column Selection",
+        "start_line": 54,
+        "end_line": 59
+    },
+    {
+        "name": "Column Selection and Visibility Toggle",
+        "start_line": 60,
+        "end_line": 71
+    },
+    {
+        "name": "File Download Setup and Execution",
+        "start_line": 72,
+        "end_line": 77
+    },
+    {
+        "name": "Preference Management",
+        "start_line": 78,
+        "end_line": 85
+    },
+    {
+        "name": "Customer Column Configuration",
+        "start_line": 86,
+        "end_line": 99
+    },
+    {
+        "name": "Column Filtering and Visibility Adjustment",
+        "start_line": 100,
+        "end_line": 113
+    },
+    {
+        "name": "Column List Selection",
+        "start_line": 114,
+        "end_line": 119
+    },
+    {
+        "name": "Column Selection and Filter Clearing",
+        "start_line": 120,
+        "end_line": 127
+    },
+    {
+        "name": "Sequential Column Selection",
+        "start_line": 128,
+        "end_line": 157
+    },
+    {
+        "name": "Toggle Column Visibility",
+        "start_line": 158,
+        "end_line": 159
+    },
+    {
+        "name": "File Export Handling",
+        "start_line": 160,
+        "end_line": 165
+    },
+    {
+        "name": "Preference Reset",
+        "start_line": 166,
+        "end_line": 169
+    },
+    {
+        "name": "Sorting Actions",
+        "start_line": 170,
+        "end_line": 175
+    },
+    {
+        "name": "Group and Column Selection",
+        "start_line": 176,
+        "end_line": 179
+    },
+    {
+        "name": "Context Menu and Column Selection",
+        "start_line": 180,
+        "end_line": 183
+    },
+    {
+        "name": "Filter Options Interaction",
+        "start_line": 184,
+        "end_line": 219
+    },
+    {
+        "name": "Filter Application and System Forecast Interaction",
+        "start_line": 220,
+        "end_line": 225
+    },
+    {
+        "name": "Additional Filter Options Interaction",
+        "start_line": 226,
+        "end_line": 239
+    },
+    {
+        "name": "Filter Selection and Operator Configuration",
+        "start_line": 240,
+        "end_line": 263
+    },
+    {
+        "name": "Pagination Interaction and Row Display Settings",
+        "start_line": 264,
+        "end_line": 283
+    },
+    {
+        "name": "Advanced Navigation and Filter Interaction",
+        "start_line": 284,
+        "end_line": 299
+    },
+    {
+        "name": "Dropdown Interaction and Filter Selection",
+        "start_line": 300,
+        "end_line": 315
+    },
+    {
+        "name": "Weekly Summary Navigation",
+        "start_line": 316,
+        "end_line": 319
+    },
+    {
+        "name": "Customer Selection",
+        "start_line": 320,
+        "end_line": 325
+    },
+    {
+        "name": "Filter Options Interaction",
+        "start_line": 326,
+        "end_line": 341
+    },
+    {
+        "name": "Dropdown Option Selection",
+        "start_line": 342,
+        "end_line": 359
+    },
+    {
+        "name": "Dropdown Selection Actions Part 1",
+        "start_line": 360,
+        "end_line": 383
+    },
+    {
+        "name": "Dropdown Selection Actions Part 2",
+        "start_line": 384,
+        "end_line": 405
+    },
+    {
+        "name": "Weekly Summary Interaction",
+        "start_line": 406,
+        "end_line": 407
+    },
+    {
+        "name": "Filter Columns Input Handling",
+        "start_line": 408,
+        "end_line": 419
+    },
+    {
+        "name": "Filter and Column Visibility Actions",
+        "start_line": 420,
+        "end_line": 423
+    },
+    {
+        "name": "Column Interaction by Label and Text",
+        "start_line": 424,
+        "end_line": 435
+    },
+    {
+        "name": "Weekly Summary and Export Actions",
+        "start_line": 436,
+        "end_line": 442
+    },
+    {
+        "name": "Preference Management",
+        "start_line": 443,
+        "end_line": 450
+    },
+    {
+        "name": "Grid Column and Icon Interactions",
+        "start_line": 451,
+        "end_line": 466
+    },
+    {
+        "name": "Grid Group Expansion and Column Selection",
+        "start_line": 467,
+        "end_line": 478
+    },
+    {
+        "name": "Grid Interaction and Initial Navigation",
+        "start_line": 479,
+        "end_line": 490
+    },
+    {
+        "name": "Line-Bar Chart Interaction - Customer Selection",
+        "start_line": 491,
+        "end_line": 498
+    },
+    {
+        "name": "Line-Bar Chart Interaction - User Forecast",
+        "start_line": 499,
+        "end_line": 508
+    },
+    {
+        "name": "Line-Bar Chart Interaction - User Override",
+        "start_line": 509,
+        "end_line": 514
+    },
+    {
+        "name": "Line-Bar Chart Interaction - System Forecast",
+        "start_line": 515,
+        "end_line": 522
+    },
+    {
+        "name": "Line-Bar Chart Interaction - Weekly Forecast",
+        "start_line": 523,
+        "end_line": 530
+    },
+    {
+        "name": "Line-Bar Chart Interaction - Daily Suggested Order",
+        "start_line": 531,
+        "end_line": 538
+    },
+    {
+        "name": "Daily Suggested Order Base Interaction",
+        "start_line": 539,
+        "end_line": 540
+    },
+    {
+        "name": "Aged Net Units Selection",
+        "start_line": 541,
+        "end_line": 542
+    },
+    {
+        "name": "Overflow Auto Container Interactions",
+        "start_line": 543,
+        "end_line": 560
+    },
+    {
+        "name": "Line-Bar Chart Interactions",
+        "start_line": 561,
+        "end_line": 568
+    },
+    {
+        "name": "User Forecast Base and Preferences",
+        "start_line": 569,
+        "end_line": 578
+    },
+    {
+        "name": "SVG and Text Element Interactions",
+        "start_line": 579,
+        "end_line": 588
+    },
+    {
+        "name": "Percentage and Date Selection",
+        "start_line": 589,
+        "end_line": 598
+    },
+    {
+        "name": "Clean Up and Close Resources",
+        "start_line": 600,
+        "end_line": 604
+    },
+    {
+        "name": "Playwright Execution Context",
+        "start_line": 607,
+        "end_line": 608
+    }
+]

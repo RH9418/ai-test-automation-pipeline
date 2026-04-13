@@ -1,0 +1,137 @@
+[
+    {
+        "name": "Imports and Setup",
+        "start_line": 1,
+        "end_line": 4
+    },
+    {
+        "name": "Browser and Page Initialization",
+        "start_line": 5,
+        "end_line": 11
+    },
+    {
+        "name": "Navigate to Executive Dashboard",
+        "start_line": 12,
+        "end_line": 13
+    },
+    {
+        "name": "Column Configuration - Initial Adjustments",
+        "start_line": 14,
+        "end_line": 25
+    },
+    {
+        "name": "Toggle All Columns Visibility",
+        "start_line": 26,
+        "end_line": 27
+    },
+    {
+        "name": "Save Preferences and Download File",
+        "start_line": 28,
+        "end_line": 37
+    },
+    {
+        "name": "Reset Preferences and Navigate to Products Tab",
+        "start_line": 38,
+        "end_line": 43
+    },
+    {
+        "name": "Products Column Configuration",
+        "start_line": 44,
+        "end_line": 59
+    },
+    {
+        "name": "Column Visibility Management",
+        "start_line": 60,
+        "end_line": 65
+    },
+    {
+        "name": "Preference Management",
+        "start_line": 66,
+        "end_line": 73
+    },
+    {
+        "name": "Column Filtering",
+        "start_line": 74,
+        "end_line": 83
+    },
+    {
+        "name": "Row Selection and Pagination",
+        "start_line": 84,
+        "end_line": 89
+    },
+    {
+        "name": "Dropdown and Row Display Settings",
+        "start_line": 90,
+        "end_line": 95
+    },
+    {
+        "name": "Time Filter Selection",
+        "start_line": 96,
+        "end_line": 113
+    },
+    {
+        "name": "Multi-Select Dropdown Interaction",
+        "start_line": 114,
+        "end_line": 119
+    },
+    {
+        "name": "Dropdown Menu Option Selection",
+        "start_line": 120,
+        "end_line": 131
+    },
+    {
+        "name": "Weekly Summary Column Visibility Management",
+        "start_line": 132,
+        "end_line": 149
+    },
+    {
+        "name": "Preference Management and Export",
+        "start_line": 150,
+        "end_line": 159
+    },
+    {
+        "name": "Reset Preferences and Date Selection",
+        "start_line": 160,
+        "end_line": 165
+    },
+    {
+        "name": "Event Details Column Visibility Management",
+        "start_line": 166,
+        "end_line": 179
+    },
+    {
+        "name": "Toggle All Columns Visibility and Save Preferences",
+        "start_line": 180,
+        "end_line": 185
+    },
+    {
+        "name": "Export Data with Current Preferences",
+        "start_line": 186,
+        "end_line": 191
+    },
+    {
+        "name": "Reset Preferences to Default",
+        "start_line": 192,
+        "end_line": 195
+    },
+    {
+        "name": "Apply and Reset Column Filters",
+        "start_line": 196,
+        "end_line": 205
+    },
+    {
+        "name": "Drill Down and Drill Up Navigation",
+        "start_line": 206,
+        "end_line": 227
+    },
+    {
+        "name": "Row Selection and Page Closure",
+        "start_line": 228,
+        "end_line": 231
+    },
+    {
+        "name": "Browser Context and Session Cleanup",
+        "start_line": 233,
+        "end_line": 237
+    }
+]

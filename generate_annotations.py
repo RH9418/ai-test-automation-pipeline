@@ -162,6 +162,7 @@ def plan_semantic_sections(state: AgentState) -> dict:
     return {"sections": all_sections}
 
 # --- Node 3: The Worker (Multimodal Annotator) ---
+# --- Node 3: The Worker (Multimodal Annotator) ---
 def annotate_sections(state: AgentState) -> dict:
     llm = AzureChatOpenAI(
         api_key=os.environ.get("AZURE_API_KEY"),
@@ -202,8 +203,14 @@ def annotate_sections(state: AgentState) -> dict:
             {"type": "text", "text": f"Context from Previous Section:\n{prev_context}\n\nCode Snippet for {section['name']}:\n\n{snippet}"}
         ]
         
-        # Attach ALL images assigned to this section
-        for img_name in section.get("image_filenames", []):
+        # 🔴 FIX: Limit images to 50 max to prevent Azure 400 errors
+        assigned_images = section.get("image_filenames", [])
+        if len(assigned_images) > 50:
+            print(f"       ⚠️ Truncating {len(assigned_images)} images down to 50 to respect Azure limits.")
+            assigned_images = assigned_images[:50]
+        
+        # Attach the capped images to this section
+        for img_name in assigned_images:
             img_path = next((p for p in state["screenshot_paths"] if os.path.basename(p) == img_name), None)
             if img_path:
                 base64_img = encode_image(img_path)
@@ -223,6 +230,7 @@ def annotate_sections(state: AgentState) -> dict:
             print(f"❌ Failed to parse Worker JSON for section {section['name']}: {e}")
             
     return {"comments": all_comments}
+
 
 # --- Node 4: File Saver (Code Injection) ---
 def save_annotated_code(state: AgentState) -> dict:
